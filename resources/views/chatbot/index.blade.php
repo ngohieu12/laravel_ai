@@ -46,7 +46,7 @@
 
         <!-- Chat Input -->
         <div class="border-t bg-white p-4">
-            <form id="chat-form" class="flex items-end space-x-3">
+            <form id="chat-form" class="flex items-center space-x-3">
                 @csrf
                 <div class="flex-1">
                     <textarea id="chat-input" name="message" rows="1" required
