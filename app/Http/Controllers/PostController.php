@@ -15,11 +15,11 @@ class PostController extends Controller
     {
         $query = Post::query();
 
-        if ($request->has('search') && $request->search !== '') {
+        if ($request->filled('search')) {
             $query->search($request->search);
         }
 
-        if ($request->has('category') && $request->category !== '') {
+        if ($request->filled('category')) {
             $query->where('category', $request->category);
         }
 
