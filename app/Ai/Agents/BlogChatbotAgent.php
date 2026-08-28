@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Ai;
+namespace App\Ai\Agents;
 
 use App\Ai\Tools\GetPostDetailTool;
 use App\Ai\Tools\GetStatsTool;

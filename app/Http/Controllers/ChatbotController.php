@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Ai\BlogChatbotAgent;
+use App\Ai\Agents\BlogChatbotAgent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
