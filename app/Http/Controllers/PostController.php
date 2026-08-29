@@ -50,11 +50,11 @@ class PostController extends Controller
             'summary' => 'required|string|max:500',
             'content' => 'required|string',
             'category' => 'required|string|max:100',
-            'author' => 'required|string|max:100',
             'is_published' => 'boolean',
         ]);
 
         $validated['is_published'] = $request->boolean('is_published');
+        $validated['user_id'] = auth()->id();
 
         Post::create($validated);
 
@@ -87,7 +87,6 @@ class PostController extends Controller
             'summary' => 'required|string|max:500',
             'content' => 'required|string',
             'category' => 'required|string|max:100',
-            'author' => 'required|string|max:100',
             'is_published' => 'boolean',
         ]);
 

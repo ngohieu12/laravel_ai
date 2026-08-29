@@ -24,7 +24,6 @@ class CreatePostTool implements Tool
             'content' => $schema->string()->description('Nội dung bài viết'),
             'summary' => $schema->string()->description('Tóm tắt ngắn gọn nội dung bài viết'),
             'category' => $schema->string()->description('Danh mục bài viết (VD: "Công nghệ", "Kinh doanh")')->default('general'),
-            'author' => $schema->string()->description('Tên tác giả')->default('Admin'),
             'is_published' => $schema->boolean()->description('Đăng công khai (true) hay nháp (false)')->default(false),
         ];
     }
@@ -35,7 +34,6 @@ class CreatePostTool implements Tool
         $content = $request->string('content')->trim()->toString();
         $summary = $request->string('summary')->trim()->toString();
         $category = $request->string('category')->trim()->value('general');
-        $author = $request->string('author')->trim()->value('Admin');
         $isPublished = $request->boolean('is_published', false);
 
         if ($title === '') {
@@ -61,7 +59,7 @@ class CreatePostTool implements Tool
                 'content' => $content,
                 'summary' => $summary,
                 'category' => $category,
-                'author' => $author,
+                'user_id' => auth()->id(),
                 'is_published' => $isPublished,
             ]);
         } catch (ValidationException $e) {
@@ -72,9 +70,11 @@ class CreatePostTool implements Tool
 
         $status = $isPublished ? 'đã đăng công khai' : 'đã lưu nháp';
 
+        $authorName = $post->user?->name ?? 'Admin';
+
         return "**Tạo bài viết {$status}!**\n\n".
             "- Tiêu đề: {$post->title}\n".
-            "- Tác giả: {$post->author}\n".
+            "- Tác giả: {$authorName}\n".
             "- Danh mục: {$post->category}\n".
             "- Tóm tắt: {$post->summary}\n".
             "- Slug: {$post->slug}\n".

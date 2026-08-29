@@ -30,9 +30,9 @@
             <div class="flex items-center space-x-4 text-sm text-gray-500 mb-6 pb-6 border-b">
                 <span class="flex items-center">
                     <span class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-medium text-sm mr-2">
-                        {{ strtoupper(substr($post->author, 0, 1)) }}
+                        {{ strtoupper(substr($post->user?->name ?? 'A', 0, 1)) }}
                     </span>
-                    {{ $post->author }}
+                    {{ $post->user?->name ?? 'Admin' }}
                 </span>
                 <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
                 @if($post->updated_at != $post->created_at)

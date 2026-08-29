@@ -4,7 +4,6 @@ namespace App\Ai\Tools;
 
 use App\Models\Post;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Tools\Request;
 use Stringable;
@@ -33,8 +32,9 @@ class SearchPostsTool implements Tool
 
         $posts = Post::published()
             ->search($keyword->value())
-            ->select('title', 'summary', 'category', 'author', 'created_at')
-            ->orderByDesc('created_at')
+            ->join('users', 'posts.user_id', '=', 'users.id')
+            ->select('posts.title', 'posts.summary', 'posts.category', 'users.name as author_name', 'posts.created_at')
+            ->orderByDesc('posts.created_at')
             ->limit(10)
             ->get();
 
@@ -46,7 +46,7 @@ class SearchPostsTool implements Tool
         foreach ($posts as $post) {
             $result .= "- **{$post->title}**\n";
             $result .= "  Tóm tắt: {$post->summary}\n";
-            $result .= "  Danh mục: {$post->category} | Tác giả: {$post->author}\n\n";
+            $result .= "  Danh mục: {$post->category} | Tác giả: {$post->author_name}\n\n";
         }
 
         return $result;

@@ -24,7 +24,7 @@ class GetStatsTool implements Tool
     {
         $totalPosts = Post::published()->count();
         $totalCategories = Post::published()->distinct()->count('category');
-        $totalAuthors = Post::published()->distinct()->count('author');
+        $totalAuthors = Post::published()->distinct()->count('user_id');
         $latest = Post::published()->latest()->first();
 
         $result = "**Thống kê Blog Manager:**\n\n";

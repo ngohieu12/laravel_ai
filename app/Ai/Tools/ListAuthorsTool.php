@@ -23,8 +23,9 @@ class ListAuthorsTool implements Tool
     public function handle(Request $request): Stringable|string
     {
         $authors = Post::published()
-            ->selectRaw('author, COUNT(*) as count')
-            ->groupBy('author')
+            ->join('users', 'posts.user_id', '=', 'users.id')
+            ->selectRaw('users.name, COUNT(*) as count')
+            ->groupBy('users.id', 'users.name')
             ->orderByDesc('count')
             ->get();
 
@@ -34,7 +35,7 @@ class ListAuthorsTool implements Tool
 
         $result = "Tác giả:\n\n";
         foreach ($authors as $author) {
-            $result .= "- **{$author->author}**: {$author->count} bài viết\n";
+            $result .= "- **{$author->name}**: {$author->count} bài viết\n";
         }
 
         return $result;

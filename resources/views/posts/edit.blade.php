@@ -41,20 +41,12 @@
                     placeholder="Viết nội dung bài viết của bạn ở đây...">{{ old('content', $post->content) }}</textarea>
             </div>
 
-            <!-- Category & Author -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Danh mục <span class="text-red-500">*</span></label>
-                    <input type="text" id="category" name="category" value="{{ old('category', $post->category) }}" required
-                        class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
-                        placeholder="VD: cong-nghe, doi-song, hoc-tap...">
-                </div>
-                <div>
-                    <label for="author" class="block text-sm font-medium text-gray-700 mb-1">Tác giả <span class="text-red-500">*</span></label>
-                    <input type="text" id="author" name="author" value="{{ old('author', $post->author) }}" required
-                        class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
-                        placeholder="Tên tác giả">
-                </div>
+            <!-- Category -->
+            <div>
+                <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Danh mục <span class="text-red-500">*</span></label>
+                <input type="text" id="category" name="category" value="{{ old('category', $post->category) }}" required
+                    class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                    placeholder="VD: cong-nghe, doi-song, hoc-tap...">
             </div>
 
             <!-- Published -->

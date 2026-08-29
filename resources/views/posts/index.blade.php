@@ -66,7 +66,7 @@
                                 </a>
                                 <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
                                 <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                                    <span>✍️ {{ $post->author }}</span>
+                                    <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
                                     <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
                                 </div>
                             </div>
