@@ -47,7 +47,7 @@
 
             <!-- Content -->
             <div class="prose text-gray-700">
-                {!! nl2br(e($post->content)) !!}
+                {!! \App\Support\HtmlSanitizer::sanitize($post->content) !!}
             </div>
         </div>
 

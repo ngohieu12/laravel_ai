@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
@@ -21,6 +20,10 @@ class PostController extends Controller
 
         if ($request->filled('category')) {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_published', $request->input('status') === 'published');
         }
 
         $posts = $query->latest()->paginate(10)->withQueryString();

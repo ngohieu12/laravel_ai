@@ -27,10 +27,17 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <select name="status" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="published" {{ request('status') === 'published' ? 'selected' : '' }}>Đã xuất bản</option>
+                    <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Bản nháp</option>
+                </select>
+            </div>
             <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg transition">
                 Tìm kiếm
             </button>
-            @if(request('search') || request('category'))
+            @if(request('search') || request('category') || request('status'))
                 <a href="{{ route('posts.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition">
                     Xóa bộ lọc
                 </a>
