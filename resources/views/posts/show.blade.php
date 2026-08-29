@@ -74,7 +74,7 @@
     <!-- Related: Ask Chatbot -->
     <div class="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border p-6 text-center">
         <p class="text-gray-700 mb-3">💬 Muốn tìm hiểu thêm về bài viết này?</p>
-        <a href="{{ route('chatbot.index', ['q' => 'Cho tôi biết về bài viết: ' . $post->title]) }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
+        <a href="{{ route('chatbot.index', ['post_id' => $post->id, 'q' => 'Giải thích chi tiết bài viết: ' . $post->title]) }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
             🤖 Hỏi Chatbot
         </a>
     </div>

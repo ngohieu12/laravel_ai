@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
@@ -43,16 +45,9 @@ class PostController extends Controller
     /**
      * Store a newly created post.
      */
-    public function store(Request $request)
+    public function store(StorePostRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'summary' => 'required|string|max:500',
-            'content' => 'required|string',
-            'category' => 'required|string|max:100',
-            'is_published' => 'boolean',
-        ]);
-
+        $validated = $request->validated();
         $validated['is_published'] = $request->boolean('is_published');
         $validated['user_id'] = auth()->id();
 
@@ -74,27 +69,40 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
+        $this->authorizeEdit($post);
+
         return view('posts.edit', compact('post'));
     }
 
     /**
      * Update the specified post.
      */
-    public function update(Request $request, Post $post)
+    public function update(UpdatePostRequest $request, Post $post)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'summary' => 'required|string|max:500',
-            'content' => 'required|string',
-            'category' => 'required|string|max:100',
-            'is_published' => 'boolean',
-        ]);
+        $this->authorizeEdit($post);
 
+        $validated = $request->validated();
         $validated['is_published'] = $request->boolean('is_published');
 
         $post->update($validated);
 
         return redirect()->route('posts.show', $post)->with('success', 'Bài viết đã được cập nhật thành công!');
+    }
+
+    /**
+     * Check if current user can edit this post.
+     */
+    private function authorizeEdit(Post $post): void
+    {
+        $user = auth()->user();
+
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if ($post->user_id !== $user->id) {
+            abort(403, 'Bạn chỉ có thể chỉnh sửa bài viết của mình.');
+        }
     }
 
     /**

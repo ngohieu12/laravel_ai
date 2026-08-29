@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Ai\Agents\BlogChatbotAgent;
+use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,22 @@ class ChatbotController extends Controller
     {
         $prefill = $request->query('q', '');
         $aiConfigured = (bool) config('ai.providers.'.config('ai.default').'.key');
+        $postContext = null;
+
+        // If navigating from a post detail page, pass post context to view (no DB conversation yet)
+        $postId = $request->query('post_id');
+        if ($postId) {
+            $post = Post::find($postId);
+            if ($post) {
+                $postContext = [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'summary' => $post->summary,
+                    'snippet' => mb_substr(strip_tags($post->content), 0, 500),
+                    'category' => $post->category,
+                ];
+            }
+        }
 
         $conversations = DB::table('agent_conversations')
             ->select('id', 'title', 'created_at', 'updated_at')
@@ -33,7 +50,7 @@ class ChatbotController extends Controller
                 ->get();
         }
 
-        return view('chatbot.index', compact('prefill', 'aiConfigured', 'conversations', 'currentConversationId', 'currentMessages'));
+        return view('chatbot.index', compact('prefill', 'aiConfigured', 'conversations', 'currentConversationId', 'currentMessages', 'postContext'));
     }
 
     /**

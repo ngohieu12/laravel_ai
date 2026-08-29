@@ -42,10 +42,36 @@
                         🤖 Chatbot
                     </a>
                 </div>
-                <div class="flex items-center">
-                    <a href="{{ route('posts.create') }}" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                        + Bài viết mới
-                    </a>
+                <div class="flex items-center space-x-4">
+                    @auth
+                        @if(auth()->user()->hasRole('admin', 'creator'))
+                        <a href="{{ route('posts.create') }}" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            + Bài viết mới
+                        </a>
+                        @endif
+                        <div class="flex items-center space-x-3">
+                            <div class="text-right">
+                                <div class="text-sm font-medium text-gray-700">{{ auth()->user()->name }}</div>
+                                <div class="text-xs text-gray-400">{{ ucfirst(auth()->user()->role) }}</div>
+                            </div>
+                            <div class="w-9 h-9 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-medium text-sm">
+                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="text-gray-400 hover:text-red-500 transition text-sm" title="Đăng xuất">
+                                🚪
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="text-gray-600 hover:text-slate-600 transition text-sm font-medium">
+                            Đăng nhập
+                        </a>
+                        <a href="{{ route('register') }}" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            Đăng ký
+                        </a>
+                    @endauth
                 </div>
             </div>
         </div>

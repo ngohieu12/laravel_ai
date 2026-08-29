@@ -63,6 +63,31 @@
         {{-- Chat Messages --}}
         <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
             @if($currentMessages->isEmpty())
+                @if($postContext)
+                <div id="post-context-card" class="bg-white border border-slate-200 rounded-xl p-4 max-w-[85%] shadow-sm mx-auto">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="text-slate-500 text-lg">📄</span>
+                        <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Bài viết được chọn</span>
+                    </div>
+                    <h3 class="text-sm font-semibold text-gray-800 mb-1">{{ $postContext['title'] }}</h3>
+                    <p class="text-xs text-gray-500 mb-2">{{ $postContext['summary'] }}</p>
+                    <div class="text-xs text-gray-400 border-t pt-2 mt-2">
+                        {{ \Illuminate\Support\Str::limit($postContext['snippet'], 200) }}
+                    </div>
+                </div>
+                <div class="chat-bubble flex items-start space-x-3">
+                    <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+                    <div class="bg-white border rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%] shadow-sm">
+                        <p class="text-gray-800">Xin chào! 👋 Tôi thấy bạn đang xem bài viết <strong>"{{ $postContext['title'] }}"</strong>.</p>
+                        <p class="text-gray-600 mt-1 text-sm">Bạn muốn hỏi gì về bài viết này? Ví dụ:</p>
+                        <ul class="text-gray-600 text-sm mt-2 space-y-1">
+                            <li>• Tóm tắt nội dung chính</li>
+                            <li>• Giải thích chi tiết phần nào?</li>
+                            <li>• Có liên quan gì đến bài viết khác không?</li>
+                        </ul>
+                    </div>
+                </div>
+                @else
                 <div id="welcome-msg" class="chat-bubble flex items-start space-x-3">
                     <div class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-sm flex-shrink-0">🤖</div>
                     <div class="bg-white border rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%] shadow-sm">
@@ -75,6 +100,7 @@
                         </ul>
                     </div>
                 </div>
+                @endif
             @else
                 @foreach($currentMessages as $msg)
                 <div class="chat-bubble flex items-start space-x-3 {{ $msg->role === 'user' ? 'flex-row-reverse space-x-reverse' : '' }}">
@@ -142,6 +168,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearBtn = document.getElementById('clear-btn');
 
     let currentConversationId = '{{ $currentConversationId }}';
+
+    // Post context from query param (no DB conversation yet)
+    const postContext = @json($postContext);
+
+    // Track whether post context has been consumed by first message
+    let postContextUsed = false;
+
+    // If postContext exists, show a temporary sidebar item (no DB record yet)
+    if (postContext && !currentConversationId) {
+        const emptyMsg = conversationList.querySelector('.px-4.py-8');
+        if (emptyMsg) emptyMsg.remove();
+
+        const tempItem = document.createElement('div');
+        tempItem.className = 'conversation-item px-4 py-3 border-b cursor-pointer hover:bg-slate-50 transition bg-slate-100 border-l-4 border-l-slate-500';
+        tempItem.dataset.temp = 'true';
+        tempItem.innerHTML = `
+            <div class="text-sm font-medium text-gray-800 truncate">Hỏi về: ${postContext.title}</div>
+            <div class="text-xs text-gray-400 mt-1">vừa xong</div>`;
+        conversationList.prepend(tempItem);
+    }
 
     // Per-conversation state: { [id]: { html: string, isLoading: boolean } }
     const conversationStates = {};
@@ -349,6 +395,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const activeId = currentConversationId;
 
+        // Prepend post context to message for AI (first message only)
+        let messageToSend = message;
+        if (postContext && !postContextUsed) {
+            postContextUsed = true;
+            messageToSend = `[Bài viết: ${postContext.title}]\nTóm tắt: ${postContext.summary}\nNội dung tóm tắt: ${postContext.snippet}\n\nCâu hỏi: ${message}`;
+            // Remove post context card from DOM
+            const ctxCard = document.getElementById('post-context-card');
+            if (ctxCard) ctxCard.remove();
+        }
+
         // Add user message to state and UI
         const userBubble = buildBubbleHTML(message, 'user');
         if (conversationStates[activeId]) {
@@ -373,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]').value,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ message, conversation_id: activeId || null }),
+                body: JSON.stringify({ message: messageToSend, conversation_id: activeId || null }),
             });
 
             const data = await response.json();
@@ -384,9 +440,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Server created a new conversation — migrate state
                     conversationStates[data.conversation_id] = conversationStates[activeId] || { html: '', isLoading: false };
                     delete conversationStates[activeId];
-                    currentConversationId = data.conversation_id;
                 }
                 currentConversationId = data.conversation_id;
+
+                // Update temp sidebar item with real conversation ID
+                const tempItem = conversationList.querySelector('[data-temp="true"]');
+                if (tempItem) {
+                    tempItem.dataset.id = data.conversation_id;
+                    tempItem.dataset.temp = 'false';
+                    tempItem.setAttribute('onclick', `loadConversation('${data.conversation_id}')`);
+                }
             }
 
             const targetId = currentConversationId;
@@ -453,6 +516,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         </div>`;
+    }
+
+    // Update placeholder when postContext is present
+    if (postContext && !currentConversationId) {
+        chatInput.placeholder = 'Hỏi về bài viết: ' + postContext.title + '...';
     }
 });
 </script>
