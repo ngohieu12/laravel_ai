@@ -15,10 +15,10 @@
         <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Tìm kiếm bài viết..."
-                    class="w-full border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    class="w-full border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400">
             </div>
             <div>
-                <select name="category" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-blue-500">
+                <select name="category" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400">
                     <option value="">Tất cả danh mục</option>
                     @foreach($categories as $category)
                         <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
@@ -50,11 +50,11 @@
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $post->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
                                         {{ $post->is_published ? 'Đã xuất bản' : 'Bản nháp' }}
                                     </span>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
                                         {{ ucfirst($post->category) }}
                                     </span>
                                 </div>
-                                <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-blue-600 transition">
+                                <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
                                     {{ $post->title }}
                                 </a>
                                 <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
@@ -64,7 +64,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2 ml-4">
-                                <a href="{{ route('posts.edit', $post) }}" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Sửa">
+                                <a href="{{ route('posts.edit', $post) }}" class="p-2 text-gray-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition" title="Sửa">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
                                 <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
@@ -90,7 +90,7 @@
             <div class="text-6xl mb-4">📝</div>
             <h3 class="text-lg font-medium text-gray-800 mb-2">Chưa có bài viết nào</h3>
             <p class="text-gray-500 mb-4">Bắt đầu tạo bài viết đầu tiên của bạn!</p>
-            <a href="{{ route('posts.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <a href="{{ route('posts.create') }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition">
                 + Tạo bài viết mới
             </a>
         </div>
