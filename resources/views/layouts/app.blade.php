@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Blog Manager')</title>
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/blog.png">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     @stack('meta')
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -37,9 +37,9 @@
                 <!-- Brand + Desktop nav -->
                 <div class="flex items-center">
                     <a href="{{ route('posts.index') }}" class="flex items-center space-x-2 group">
-                        <img src="https://img.icons8.com/color/96/blog.png"
+                        <img src="{{ asset('images/logo.png') }}"
                              alt="Blog Manager Logo"
-                             class="w-9 h-9 rounded-lg group-hover:scale-105 transition-transform"
+                             class="w-9 h-9 rounded-lg group-hover:scale-105 transition-transform shadow-sm"
                              onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                         <span class="w-9 h-9 rounded-lg bg-slate-700 text-white items-center justify-center font-bold hidden" style="display:none">📝</span>
                         <div class="flex flex-col leading-tight">
@@ -194,7 +194,7 @@
                 <!-- Brand column -->
                 <div class="md:col-span-2">
                     <div class="flex items-center space-x-2 mb-4">
-                        <img src="https://img.icons8.com/color/96/blog.png" alt="Logo" class="w-9 h-9 rounded-lg bg-white/10 p-1">
+                        <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-9 h-9 rounded-lg bg-white/10 p-0.5">
                         <span class="text-xl font-bold text-white">Blog Manager</span>
                     </div>
                     <p class="text-sm text-gray-400 leading-relaxed mb-4 max-w-md">
