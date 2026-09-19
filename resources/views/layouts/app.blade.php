@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Quản lý Bài viết')</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>@yield('title', 'Blog Manager')</title>
+    @stack('meta')
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .prose { max-width: 800px; }
@@ -38,12 +40,14 @@
                     <a href="{{ route('posts.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('posts.index', 'posts.show', 'posts.create', 'posts.edit') ? 'text-slate-600 font-medium' : '' }}">
                         📝 Bài viết
                     </a>
+                    @auth
                     <a href="{{ route('favorites.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('favorites.*') ? 'text-slate-600 font-medium' : '' }}">
                         ⭐ Yêu thích
                     </a>
                     <a href="{{ route('chatbot.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('chatbot.*') ? 'text-slate-600 font-medium' : '' }}">
                         🤖 Chatbot
                     </a>
+                    @endauth
                 </div>
                 <div class="flex items-center space-x-4">
                     @auth

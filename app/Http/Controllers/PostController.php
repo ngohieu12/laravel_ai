@@ -48,10 +48,10 @@ class PostController extends Controller
         $posts = $query->paginate(10)->withQueryString();
         $categories = Post::distinct()->pluck('category');
 
-        $favoritedIds = $request->user()
-            ->favorites()
-            ->pluck('posts.id')
-            ->toArray();
+        $user = $request->user();
+        $favoritedIds = $user
+            ? $user->favorites()->pluck('posts.id')->toArray()
+            : [];
 
         return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'sort'));
     }
@@ -84,9 +84,10 @@ class PostController extends Controller
     public function show(Request $request, Post $post)
     {
         $post->favorites_count = $post->favoritedBy()->count();
-        $isFavorited = $request->user()->hasFavorited($post);
+        $user = $request->user();
+        $isFavorited = $user ? $user->hasFavorited($post) : false;
 
-        $comments = Comment::loadForPost($post, $request->user());
+        $comments = Comment::loadForPost($post, $user);
         $commentsCount = $post->comments()->count();
 
         return view('posts.show', compact('post', 'isFavorited', 'comments', 'commentsCount'));

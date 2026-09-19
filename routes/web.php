@@ -17,12 +17,12 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Posts (auth)
-Route::middleware('auth')->group(function () {
-    // View: all authenticated users
-    Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
-    Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
+// Posts — publicly viewable (guests can read index + show)
+Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
+Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 
+// Authenticated-only actions (favorites, comments, create/edit/delete)
+Route::middleware('auth')->group(function () {
     // Favorites
     Route::post('/posts/{post}/favorite', [FavoriteController::class, 'toggle'])->name('posts.favorite');
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');

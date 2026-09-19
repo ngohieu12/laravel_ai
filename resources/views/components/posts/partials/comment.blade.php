@@ -24,6 +24,7 @@
 
             <!-- Actions -->
             <div class="mt-2 flex items-center space-x-3 text-sm">
+                @auth
                 <form action="{{ route('posts.comments.favorite', ['post' => $post, 'comment' => $comment]) }}" method="POST" class="inline">
                     @csrf
                     <button type="submit"
@@ -33,20 +34,31 @@
                         <span class="text-xs">{{ $comment->favorites_count }}</span>
                     </button>
                 </form>
-
-                @if($comment->canReply())
-                    <button type="button"
-                        data-reply-toggle="{{ $comment->id }}"
-                        class="inline-flex items-center space-x-1 px-2 py-1 rounded-md text-gray-500 hover:text-slate-700 hover:bg-slate-100 transition">
-                        <span>💬</span>
-                        <span>Trả lời</span>
-                    </button>
                 @else
-                    <span class="text-xs text-gray-400 italic">Đã đạt giới hạn trả lời</span>
-                @endif
+                <a href="{{ route('login') }}"
+                    class="inline-flex items-center space-x-1 px-2 py-1 rounded-md transition text-gray-500 hover:text-red-600 hover:bg-red-50"
+                    title="Đăng nhập để thích">
+                    <span class="text-base leading-none">🤍</span>
+                    <span class="text-xs">{{ $comment->favorites_count }}</span>
+                </a>
+                @endauth
+
+                @auth
+                    @if($comment->canReply())
+                        <button type="button"
+                            data-reply-toggle="{{ $comment->id }}"
+                            class="inline-flex items-center space-x-1 px-2 py-1 rounded-md text-gray-500 hover:text-slate-700 hover:bg-slate-100 transition">
+                            <span>💬</span>
+                            <span>Trả lời</span>
+                        </button>
+                    @else
+                        <span class="text-xs text-gray-400 italic">Đã đạt giới hạn trả lời</span>
+                    @endif
+                @endauth
             </div>
 
             <!-- Inline reply form (hidden by default) -->
+            @auth
             @if($comment->canReply())
                 <div id="reply-form-{{ $comment->id }}" class="mt-3 hidden">
                     <form action="{{ route('posts.comments.store', $post) }}" method="POST">
@@ -66,6 +78,7 @@
                     </form>
                 </div>
             @endif
+            @endauth
 
             <!-- Nested replies -->
             @if($comment->replies && $comment->replies->count() > 0)
