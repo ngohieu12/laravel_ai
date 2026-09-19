@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
+use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
@@ -85,7 +86,10 @@ class PostController extends Controller
         $post->favorites_count = $post->favoritedBy()->count();
         $isFavorited = $request->user()->hasFavorited($post);
 
-        return view('posts.show', compact('post', 'isFavorited'));
+        $comments = Comment::loadForPost($post, $request->user());
+        $commentsCount = $post->comments()->count();
+
+        return view('posts.show', compact('post', 'isFavorited', 'comments', 'commentsCount'));
     }
 
     /**

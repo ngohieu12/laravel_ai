@@ -41,11 +41,53 @@ class User extends Authenticatable
     }
 
     /**
+     * Comments written by this user.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Comments favorited/liked by this user.
+     */
+    public function commentFavorites(): BelongsToMany
+    {
+        return $this->belongsToMany(Comment::class, 'comment_favorites', 'user_id', 'comment_id')
+            ->withTimestamps();
+    }
+
+    /**
      * Check if user has favorited the given post.
      */
     public function hasFavorited(Post $post): bool
     {
         return $this->favorites()->where('post_id', $post->id)->exists();
+    }
+
+    /**
+     * Check if user has favorited the given comment.
+     */
+    public function hasFavoritedComment(Comment $comment): bool
+    {
+        return $this->commentFavorites()->where('comment_id', $comment->id)->exists();
+    }
+
+    /**
+     * Toggle favorite status for a comment.
+     * Returns true if now favorited, false if unfavorited.
+     */
+    public function toggleCommentFavorite(Comment $comment): bool
+    {
+        if ($this->hasFavoritedComment($comment)) {
+            $this->commentFavorites()->detach($comment->id);
+
+            return false;
+        }
+
+        $this->commentFavorites()->syncWithoutDetaching([$comment->id]);
+
+        return true;
     }
 
     /**

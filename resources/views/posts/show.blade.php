@@ -92,5 +92,73 @@
             🤖 Hỏi Chatbot
         </a>
     </div>
+
+    <!-- Comments section -->
+    <section class="bg-white rounded-xl shadow-sm border p-6 sm:p-8 space-y-6">
+        <h2 class="text-xl font-bold text-gray-800 flex items-center space-x-2">
+            <span>💬 Bình luận</span>
+            <span class="text-sm font-normal text-gray-500">({{ $commentsCount }})</span>
+        </h2>
+
+        <!-- New comment form (root level) -->
+        <form action="{{ route('posts.comments.store', $post) }}" method="POST" class="space-y-3">
+            @csrf
+            <div>
+                <textarea name="content" rows="3" required maxlength="2000"
+                    placeholder="Viết bình luận của bạn..."
+                    class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"></textarea>
+                @error('content')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+                @error('parent_id')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="inline-flex items-center px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
+                    📝 Đăng bình luận
+                </button>
+            </div>
+        </form>
+
+        <!-- Comments list -->
+        <div class="divide-y divide-gray-100">
+            @if($comments->count() > 0)
+                @foreach($comments as $comment)
+                    <x-posts.partials.comment :comment="$comment" :post="$post" />
+                @endforeach
+            @else
+                <div class="text-center py-8 text-gray-500">
+                    <div class="text-4xl mb-2">💭</div>
+                    <p class="text-sm">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+                </div>
+            @endif
+        </div>
+    </section>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('click', function (e) {
+        const toggle = e.target.closest('[data-reply-toggle]');
+        const cancel = e.target.closest('[data-reply-cancel]');
+        if (toggle) {
+            const id = toggle.getAttribute('data-reply-toggle');
+            const form = document.getElementById('reply-form-' + id);
+            if (form) {
+                form.classList.toggle('hidden');
+                if (!form.classList.contains('hidden')) {
+                    const ta = form.querySelector('textarea');
+                    if (ta) ta.focus();
+                }
+            }
+        }
+        if (cancel) {
+            const id = cancel.getAttribute('data-reply-cancel');
+            const form = document.getElementById('reply-form-' + id);
+            if (form) form.classList.add('hidden');
+        }
+    });
+</script>
+@endpush
