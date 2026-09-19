@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
+use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,7 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Post::query();
+        $query = Post::query()->withCount(['favoritedBy as favorites_count']);
 
         if ($request->filled('search')) {
             $query->search($request->search);
@@ -28,10 +29,31 @@ class PostController extends Controller
             $query->where('is_published', $request->input('status') === 'published');
         }
 
-        $posts = $query->latest()->paginate(10)->withQueryString();
+        // Sorting
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'favorites':
+                $query->orderByDesc('favorites_count')->orderByDesc('created_at');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at');
+                break;
+            case 'newest':
+            default:
+                $query->latest();
+                $sort = 'newest';
+                break;
+        }
+
+        $posts = $query->paginate(10)->withQueryString();
         $categories = Post::distinct()->pluck('category');
 
-        return view('posts.index', compact('posts', 'categories'));
+        $user = $request->user();
+        $favoritedIds = $user
+            ? $user->favorites()->pluck('posts.id')->toArray()
+            : [];
+
+        return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'sort'));
     }
 
     /**
@@ -59,9 +81,16 @@ class PostController extends Controller
     /**
      * Display the specified post.
      */
-    public function show(Post $post)
+    public function show(Request $request, Post $post)
     {
-        return view('posts.show', compact('post'));
+        $post->favorites_count = $post->favoritedBy()->count();
+        $user = $request->user();
+        $isFavorited = $user ? $user->hasFavorited($post) : false;
+
+        $comments = Comment::loadForPost($post, $user);
+        $commentsCount = $post->comments()->count();
+
+        return view('posts.show', compact('post', 'isFavorited', 'comments', 'commentsCount'));
     }
 
     /**

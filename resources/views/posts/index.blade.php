@@ -5,9 +5,54 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-gray-800">📝 Danh sách Bài viết</h1>
+    <div class="flex justify-between items-center flex-wrap gap-2">
+        <div>
+            @php
+                $isSortFav = ($sort ?? 'newest') === 'favorites';
+                $currentCat = request('category');
+            @endphp
+            <h1 class="text-2xl font-bold text-gray-800">
+                @if($isSortFav && $currentCat)
+                    ⭐ Bài viết yêu thích nhất — 📂 {{ ucfirst($currentCat) }}
+                @elseif($isSortFav)
+                    ⭐ Bài viết được yêu thích nhiều nhất
+                @elseif($currentCat)
+                    📂 Danh mục: {{ ucfirst($currentCat) }}
+                @else
+                    📝 Danh sách Bài viết
+                @endif
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+                @if($isSortFav)
+                    Sắp xếp theo số lượt ❤️ yêu thích giảm dần.
+                @else
+                    @if(($sort ?? 'newest') === 'oldest') Cũ nhất trước. @else Mới nhất trước. @endif
+                @endif
+            </p>
+        </div>
         <span class="text-sm text-gray-500">{{ $posts->total() }} bài viết</span>
+    </div>
+
+    <!-- Quick category chips (useful when browsing by favorites) -->
+    <div class="flex flex-wrap gap-2 items-center">
+        <span class="text-sm text-gray-500">📂 Lọc nhanh theo danh mục:</span>
+        @php
+            $activeCategory = request('category');
+            // Build base query for chips preserving other filters except category.
+            $baseQuery = request()->except(['category', 'page']);
+        @endphp
+        <a href="{{ route('posts.index', array_merge($baseQuery, ['category' => ''])) }}"
+            class="px-3 py-1 rounded-full text-xs font-medium transition {{ $activeCategory === null || $activeCategory === '' ? 'bg-slate-700 text-white' : 'bg-white border text-gray-600 hover:bg-slate-50' }}">
+            Tất cả
+        </a>
+        @foreach($categories as $cat)
+            @if($cat)
+            <a href="{{ route('posts.index', array_merge($baseQuery, ['category' => $cat])) }}"
+                class="px-3 py-1 rounded-full text-xs font-medium transition {{ $activeCategory === $cat ? 'bg-slate-700 text-white' : 'bg-white border text-gray-600 hover:bg-slate-50' }}">
+                {{ ucfirst($cat) }}
+            </a>
+            @endif
+        @endforeach
     </div>
 
     <!-- Search & Filter -->
@@ -34,10 +79,17 @@
                     <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Bản nháp</option>
                 </select>
             </div>
+            <div>
+                <select name="sort" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400">
+                    <option value="newest" {{ ($sort ?? 'newest') === 'newest' ? 'selected' : '' }}>🕒 Mới nhất</option>
+                    <option value="oldest" {{ ($sort ?? '') === 'oldest' ? 'selected' : '' }}>🕒 Cũ nhất</option>
+                    <option value="favorites" {{ ($sort ?? '') === 'favorites' ? 'selected' : '' }}>❤️ Yêu thích nhiều</option>
+                </select>
+            </div>
             <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg transition">
                 Tìm kiếm
             </button>
-            @if(request('search') || request('category') || request('status'))
+            @if(request('search') || request('category') || request('status') || request('sort'))
                 <a href="{{ route('posts.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition">
                     Xóa bộ lọc
                 </a>
@@ -68,9 +120,31 @@
                                 <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
                                     <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
                                     <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
+                                    <span>❤️ {{ $post->favorites_count ?? 0 }} lượt yêu thích</span>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2 ml-4">
+                                @auth
+                                <form action="{{ route('posts.favorite', $post) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                        class="p-2 rounded-lg transition {{ in_array($post->id, $favoritedIds ?? []) ? 'text-red-500 hover:text-red-700 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50' }}"
+                                        title="{{ in_array($post->id, $favoritedIds ?? []) ? 'Bỏ yêu thích' : 'Yêu thích' }}">
+                                        @if(in_array($post->id, $favoritedIds ?? []))
+                                            ❤️
+                                        @else
+                                            🤍
+                                        @endif
+                                        <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
+                                    </button>
+                                </form>
+                                @else
+                                <a href="{{ route('login') }}" class="p-2 rounded-lg transition text-gray-400 hover:text-red-500 hover:bg-red-50" title="Đăng nhập để yêu thích">
+                                    🤍
+                                    <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
+                                </a>
+                                @endauth
+                                @auth
                                 <a href="{{ route('posts.edit', $post) }}" class="p-2 text-gray-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition" title="Sửa">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>
@@ -81,6 +155,7 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </form>
+                                @endauth
                             </div>
                         </div>
                     </div>
