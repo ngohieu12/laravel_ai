@@ -5,6 +5,7 @@ namespace App\Ai\Agents;
 use App\Ai\Tools\CreatePostTool;
 use App\Ai\Tools\GetPostDetailTool;
 use App\Ai\Tools\GetStatsTool;
+use App\Ai\Tools\GetTopFavoritedPostsTool;
 use App\Ai\Tools\ListAuthorsTool;
 use App\Ai\Tools\ListCategoriesTool;
 use App\Ai\Tools\SearchPostsTool;
@@ -36,6 +37,7 @@ Quy tắc sử dụng tool:
 - Xem nội dung chi tiết bài viết → gọi get_post_detail
 - Liệt kê danh mục → gọi list_categories
 - Liệt kê tác giả → gọi list_authors
+- Hỏi về bài viết phổ biến, yêu thích nhất, nhiều like nhất, top bài hay → gọi get_top_favorited_posts
 
 Quy tắc tạo bài viết (create_post):
 - Khi người dùng nói "đăng bài về X", "viết bài về X", "tạo bài về X", hoặc bất kỳ yêu cầu tạo bài viết nào → NGAY LẬP TỨC gọi create_post. KHÔNG hỏi lại.
@@ -60,6 +62,7 @@ INSTRUCTIONS;
             new CreatePostTool,
             new ListCategoriesTool,
             new ListAuthorsTool,
+            new GetTopFavoritedPostsTool,
         ];
     }
 }

@@ -28,7 +28,23 @@ class PostController extends Controller
             $query->where('is_published', $request->input('status') === 'published');
         }
 
-        $posts = $query->latest()->paginate(10)->withQueryString();
+        // Sorting
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'favorites':
+                $query->orderByDesc('favorites_count')->orderByDesc('created_at');
+                break;
+            case 'oldest':
+                $query->orderBy('created_at');
+                break;
+            case 'newest':
+            default:
+                $query->latest();
+                $sort = 'newest';
+                break;
+        }
+
+        $posts = $query->paginate(10)->withQueryString();
         $categories = Post::distinct()->pluck('category');
 
         $favoritedIds = $request->user()
@@ -36,7 +52,7 @@ class PostController extends Controller
             ->pluck('posts.id')
             ->toArray();
 
-        return view('posts.index', compact('posts', 'categories', 'favoritedIds'));
+        return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'sort'));
     }
 
     /**

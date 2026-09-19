@@ -34,10 +34,17 @@
                     <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Bản nháp</option>
                 </select>
             </div>
+            <div>
+                <select name="sort" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400">
+                    <option value="newest" {{ ($sort ?? 'newest') === 'newest' ? 'selected' : '' }}>🕒 Mới nhất</option>
+                    <option value="oldest" {{ ($sort ?? '') === 'oldest' ? 'selected' : '' }}>🕒 Cũ nhất</option>
+                    <option value="favorites" {{ ($sort ?? '') === 'favorites' ? 'selected' : '' }}>❤️ Yêu thích nhiều</option>
+                </select>
+            </div>
             <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg transition">
                 Tìm kiếm
             </button>
-            @if(request('search') || request('category') || request('status'))
+            @if(request('search') || request('category') || request('status') || request('sort'))
                 <a href="{{ route('posts.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition">
                     Xóa bộ lọc
                 </a>
@@ -68,6 +75,7 @@
                                 <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
                                     <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
                                     <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
+                                    <span>❤️ {{ $post->favorites_count ?? 0 }} lượt yêu thích</span>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2 ml-4">
