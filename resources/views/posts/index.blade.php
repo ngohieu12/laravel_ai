@@ -5,9 +5,54 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-gray-800">📝 Danh sách Bài viết</h1>
+    <div class="flex justify-between items-center flex-wrap gap-2">
+        <div>
+            @php
+                $isSortFav = ($sort ?? 'newest') === 'favorites';
+                $currentCat = request('category');
+            @endphp
+            <h1 class="text-2xl font-bold text-gray-800">
+                @if($isSortFav && $currentCat)
+                    ⭐ Bài viết yêu thích nhất — 📂 {{ ucfirst($currentCat) }}
+                @elseif($isSortFav)
+                    ⭐ Bài viết được yêu thích nhiều nhất
+                @elseif($currentCat)
+                    📂 Danh mục: {{ ucfirst($currentCat) }}
+                @else
+                    📝 Danh sách Bài viết
+                @endif
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+                @if($isSortFav)
+                    Sắp xếp theo số lượt ❤️ yêu thích giảm dần.
+                @else
+                    @if(($sort ?? 'newest') === 'oldest') Cũ nhất trước. @else Mới nhất trước. @endif
+                @endif
+            </p>
+        </div>
         <span class="text-sm text-gray-500">{{ $posts->total() }} bài viết</span>
+    </div>
+
+    <!-- Quick category chips (useful when browsing by favorites) -->
+    <div class="flex flex-wrap gap-2 items-center">
+        <span class="text-sm text-gray-500">📂 Lọc nhanh theo danh mục:</span>
+        @php
+            $activeCategory = request('category');
+            // Build base query for chips preserving other filters except category.
+            $baseQuery = request()->except(['category', 'page']);
+        @endphp
+        <a href="{{ route('posts.index', array_merge($baseQuery, ['category' => ''])) }}"
+            class="px-3 py-1 rounded-full text-xs font-medium transition {{ $activeCategory === null || $activeCategory === '' ? 'bg-slate-700 text-white' : 'bg-white border text-gray-600 hover:bg-slate-50' }}">
+            Tất cả
+        </a>
+        @foreach($categories as $cat)
+            @if($cat)
+            <a href="{{ route('posts.index', array_merge($baseQuery, ['category' => $cat])) }}"
+                class="px-3 py-1 rounded-full text-xs font-medium transition {{ $activeCategory === $cat ? 'bg-slate-700 text-white' : 'bg-white border text-gray-600 hover:bg-slate-50' }}">
+                {{ ucfirst($cat) }}
+            </a>
+            @endif
+        @endforeach
     </div>
 
     <!-- Search & Filter -->

@@ -21,6 +21,10 @@ class GetTopFavoritedPostsTool implements Tool
             'limit' => $schema->integer()
                 ->description('Số lượng bài viết muốn lấy (mặc định: 5, tối đa: 20)')
                 ->default(5),
+            'category' => $schema->string()
+                ->description('Tên danh mục muốn lọc (ví dụ: "công nghệ", "tutorial"). Để trống để lấy tất cả danh mục.')
+                ->nullable()
+                ->default(null),
         ];
     }
 
@@ -34,22 +38,38 @@ class GetTopFavoritedPostsTool implements Tool
             $limit = 20;
         }
 
-        $posts = Post::published()
+        $category = $request->input('category');
+        $category = is_string($category) ? trim($category) : null;
+        if ($category === '') {
+            $category = null;
+        }
+
+        $query = Post::published()
             ->withCount('favoritedBy as favorites_count')
             ->join('users', 'posts.user_id', '=', 'users.id')
             ->select('posts.id', 'posts.title', 'posts.summary', 'posts.category', 'posts.created_at', 'users.name as author_name')
             ->orderByDesc('favorites_count')
-            ->orderByDesc('posts.created_at')
-            ->limit($limit)
-            ->get();
+            ->orderByDesc('posts.created_at');
+
+        if ($category !== null) {
+            // Case-insensitive contains match on category.
+            $query->where('posts.category', 'like', '%' . str_replace(['%', '_'], ['\\%', '\\_'], $category) . '%');
+        }
+
+        $posts = $query->limit($limit)->get();
 
         if ($posts->isEmpty()) {
+            if ($category) {
+                return "Hiện tại chưa có bài viết yêu thích nào trong danh mục \"{$category}\".";
+            }
+
             return 'Hiện tại chưa có bài viết nào được yêu thích.';
         }
 
         $totalWithFavs = $posts->where('favorites_count', '>', 0)->count();
 
-        $result = "**Top {$limit} bài viết được yêu thích nhất:**\n\n";
+        $scopeLabel = $category ? "danh mục **{$category}**" : 'toàn blog';
+        $result = "**Top {$limit} bài viết được yêu thích nhất ({$scopeLabel}):**\n\n";
 
         foreach ($posts as $i => $post) {
             $rank = $i + 1;

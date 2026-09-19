@@ -40,11 +40,35 @@ class FavoriteController extends Controller
     {
         $user = $request->user();
 
-        $posts = $user->favorites()
+        $query = $user->favorites()
             ->with('user')
-            ->latest('favorites.created_at')
-            ->paginate(10);
+            ->withCount('favoritedBy as favorites_count');
 
-        return view('posts.favorites', compact('posts'));
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        // Sort options: favorited_at (default), or favorites_count.
+        $sort = $request->input('sort', 'recent');
+        switch ($sort) {
+            case 'favorites':
+                $query->orderByDesc('favorites_count')->latest('favorites.created_at');
+                break;
+            case 'recent':
+            default:
+                $query->latest('favorites.created_at');
+                $sort = 'recent';
+                break;
+        }
+
+        $posts = $query->paginate(10)->withQueryString();
+
+        // Categories that exist among the user's favorites, for the chip filter.
+        $categories = $user->favorites()
+            ->distinct()
+            ->pluck('category')
+            ->filter();
+
+        return view('posts.favorites', compact('posts', 'categories', 'sort'));
     }
 }

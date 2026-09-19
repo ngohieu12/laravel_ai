@@ -5,10 +5,57 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-gray-800">⭐ Bài viết Yêu thích</h1>
+    <div class="flex justify-between items-center flex-wrap gap-2">
+        <div>
+            @php
+                $currentCat = request('category');
+                $currentSort = $sort ?? 'recent';
+            @endphp
+            <h1 class="text-2xl font-bold text-gray-800">
+                @if($currentCat)
+                    ⭐ Bài viết Yêu thích — 📂 {{ ucfirst($currentCat) }}
+                @else
+                    ⭐ Bài viết Yêu thích
+                @endif
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+                @if($currentSort === 'favorites')
+                    Sắp xếp theo số ❤️ yêu thích chung giảm dần.
+                @else
+                    Sắp xếp theo thời gian bạn đánh dấu yêu thích.
+                @endif
+            </p>
+        </div>
         <span class="text-sm text-gray-500">{{ $posts->total() }} bài viết</span>
     </div>
+
+    <!-- Filters: category chips + sort -->
+    <form method="GET" action="{{ route('favorites.index') }}" class="bg-white rounded-xl shadow-sm p-4 border space-y-3">
+        <div class="flex flex-wrap gap-2 items-center">
+            <span class="text-sm text-gray-500">📂 Danh mục:</span>
+            @php $baseQ = request()->except(['category', 'page']); @endphp
+            <a href="{{ route('favorites.index', array_merge($baseQ, ['category' => ''])) }}"
+                class="px-3 py-1 rounded-full text-xs font-medium transition {{ !request('category') ? 'bg-slate-700 text-white' : 'bg-white border text-gray-600 hover:bg-slate-50' }}">
+                Tất cả
+            </a>
+            @foreach($categories as $cat)
+                <a href="{{ route('favorites.index', array_merge($baseQ, ['category' => $cat])) }}"
+                    class="px-3 py-1 rounded-full text-xs font-medium transition {{ request('category') === $cat ? 'bg-slate-700 text-white' : 'bg-white border text-gray-600 hover:bg-slate-50' }}">
+                    {{ ucfirst($cat) }}
+                </a>
+            @endforeach
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+            <span class="text-sm text-gray-500">🔀 Sắp xếp:</span>
+            <select name="sort" class="border-gray-300 rounded-lg px-3 py-1.5 border text-sm focus:ring-2 focus:ring-slate-400" onchange="this.form.submit()">
+                <option value="recent" {{ ($sort ?? 'recent') === 'recent' ? 'selected' : '' }}>🕒 Vừa yêu thích</option>
+                <option value="favorites" {{ ($sort ?? '') === 'favorites' ? 'selected' : '' }}>❤️ Nhiều yêu thích</option>
+            </select>
+            @if(request('category'))
+                <a href="{{ route('favorites.index') }}" class="text-sm text-gray-500 hover:text-gray-700 ml-2">Xóa lọc</a>
+            @endif
+        </div>
+    </form>
 
     <!-- Posts List -->
     @if($posts->count() > 0)
@@ -27,6 +74,9 @@
                                     </span>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700" title="Yêu thích lúc">
                                         ⭐ {{ $post->pivot->created_at->format('d/m/Y H:i') }}
+                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                                        ❤️ {{ $post->favorites_count ?? 0 }}
                                     </span>
                                 </div>
                                 <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
@@ -59,7 +109,13 @@
     @else
         <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
             <div class="text-6xl mb-4">⭐</div>
-            <h3 class="text-lg font-medium text-gray-800 mb-2">Chưa có bài viết yêu thích nào</h3>
+            <h3 class="text-lg font-medium text-gray-800 mb-2">
+                @if(request('category'))
+                    Chưa có bài viết yêu thích nào trong danh mục "{{ request('category') }}"
+                @else
+                    Chưa có bài viết yêu thích nào
+                @endif
+            </h3>
             <p class="text-gray-500 mb-4">Hãy bắt đầu đánh dấu yêu thích cho các bài viết bạn quan tâm!</p>
             <a href="{{ route('posts.index') }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition">
                 📝 Xem danh sách bài viết
