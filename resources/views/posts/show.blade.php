@@ -53,8 +53,22 @@
 
         <!-- Actions -->
         <div class="bg-gray-50 px-8 py-4 border-t flex justify-between items-center">
-            <div class="text-sm text-gray-500">
-                Slug: <code class="bg-gray-200 px-2 py-1 rounded">{{ $post->slug }}</code>
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <form action="{{ route('posts.favorite', $post) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 rounded-lg transition text-sm font-medium {{ $isFavorited ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100' }}">
+                        @if($isFavorited)
+                            ❤️ Đã yêu thích
+                        @else
+                            🤍 Yêu thích
+                        @endif
+                        <span class="ml-2 px-1.5 py-0.5 rounded text-xs {{ $isFavorited ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-700' }}">
+                            {{ $post->favorites_count ?? 0 }}
+                        </span>
+                    </button>
+                </form>
+                <span>Slug: <code class="bg-gray-200 px-2 py-1 rounded">{{ $post->slug }}</code></span>
             </div>
             <div class="flex space-x-3">
                 <a href="{{ route('posts.edit', $post) }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">

@@ -14,7 +14,7 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Post::query();
+        $query = Post::query()->withCount(['favoritedBy as favorites_count']);
 
         if ($request->filled('search')) {
             $query->search($request->search);
@@ -31,7 +31,12 @@ class PostController extends Controller
         $posts = $query->latest()->paginate(10)->withQueryString();
         $categories = Post::distinct()->pluck('category');
 
-        return view('posts.index', compact('posts', 'categories'));
+        $favoritedIds = $request->user()
+            ->favorites()
+            ->pluck('posts.id')
+            ->toArray();
+
+        return view('posts.index', compact('posts', 'categories', 'favoritedIds'));
     }
 
     /**
@@ -59,9 +64,12 @@ class PostController extends Controller
     /**
      * Display the specified post.
      */
-    public function show(Post $post)
+    public function show(Request $request, Post $post)
     {
-        return view('posts.show', compact('post'));
+        $post->favorites_count = $post->favoritedBy()->count();
+        $isFavorited = $request->user()->hasFavorited($post);
+
+        return view('posts.show', compact('post', 'isFavorited'));
     }
 
     /**

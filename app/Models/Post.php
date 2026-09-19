@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class Post extends Model
@@ -25,9 +27,38 @@ class Post extends Model
         'user_id' => 'integer',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Users who favorited this post.
+     */
+    public function favoritedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'favorites', 'post_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Count of users who favorited this post.
+     */
+    public function favoritesCount(): int
+    {
+        return $this->favoritedBy()->count();
+    }
+
+    /**
+     * Check if a given user has favorited this post.
+     */
+    public function isFavoritedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->favoritedBy()->where('user_id', $user->id)->exists();
     }
 
     protected static function boot(): void

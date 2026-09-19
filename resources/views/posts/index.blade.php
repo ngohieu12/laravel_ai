@@ -71,6 +71,19 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2 ml-4">
+                                <form action="{{ route('posts.favorite', $post) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                        class="p-2 rounded-lg transition {{ in_array($post->id, $favoritedIds ?? []) ? 'text-red-500 hover:text-red-700 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50' }}"
+                                        title="{{ in_array($post->id, $favoritedIds ?? []) ? 'Bỏ yêu thích' : 'Yêu thích' }}">
+                                        @if(in_array($post->id, $favoritedIds ?? []))
+                                            ❤️
+                                        @else
+                                            🤍
+                                        @endif
+                                        <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
+                                    </button>
+                                </form>
                                 <a href="{{ route('posts.edit', $post) }}" class="p-2 text-gray-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition" title="Sửa">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 </a>

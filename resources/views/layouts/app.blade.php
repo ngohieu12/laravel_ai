@@ -35,8 +35,11 @@
                         </svg>
                         <span class="text-xl font-bold text-gray-800">Blog Manager</span>
                     </a>
-                    <a href="{{ route('posts.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('posts.*') ? 'text-slate-600 font-medium' : '' }}">
+                    <a href="{{ route('posts.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('posts.index', 'posts.show', 'posts.create', 'posts.edit') ? 'text-slate-600 font-medium' : '' }}">
                         📝 Bài viết
+                    </a>
+                    <a href="{{ route('favorites.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('favorites.*') ? 'text-slate-600 font-medium' : '' }}">
+                        ⭐ Yêu thích
                     </a>
                     <a href="{{ route('chatbot.index') }}" class="text-gray-600 hover:text-slate-600 transition {{ request()->routeIs('chatbot.*') ? 'text-slate-600 font-medium' : '' }}">
                         🤖 Chatbot

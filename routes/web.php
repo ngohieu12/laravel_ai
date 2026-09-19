@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PostController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,10 @@ Route::middleware('auth')->group(function () {
     // View: all authenticated users
     Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
     Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
+
+    // Favorites
+    Route::post('/posts/{post}/favorite', [FavoriteController::class, 'toggle'])->name('posts.favorite');
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
 
     // Create/Edit/Delete: admin & creator only
     Route::middleware('role:admin,creator')->group(function () {
