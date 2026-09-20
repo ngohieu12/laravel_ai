@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AdminAnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PostController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('posts.comments.store');
     Route::post('/posts/{post}/comments/{comment}/favorite', [CommentController::class, 'toggleFavorite'])->name('posts.comments.favorite');
 
+    // Engagement tracking (share buttons report the click before opening the network)
+    Route::post('/posts/{post}/shares', [EngagementController::class, 'trackShare'])->name('posts.shares.track');
+
     // Create/Edit/Delete: admin & creator only
     Route::middleware('role:admin,creator')->group(function () {
         Route::get('/posts/create', [PostController::class, 'create'])->name('posts.create');
@@ -43,6 +48,12 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     });
+});
+
+// Admin analytics — engagement insights (views / shares / favorites) & hot topics
+Route::middleware(['auth', 'role:admin'])->prefix('admin/analytics')->name('admin.analytics.')->group(function () {
+    Route::get('/', [AdminAnalyticsController::class, 'index'])->name('index');
+    Route::get('/posts/{post}', [AdminAnalyticsController::class, 'show'])->name('posts.show');
 });
 
 // Chatbot (auth)

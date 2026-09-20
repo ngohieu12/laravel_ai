@@ -21,6 +21,47 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Blog Manager — tính năng & cài đặt
+
+Ứng dụng demo trong repo này là một blog có chatbot AI, kèm hai nhóm tính năng chính:
+
+**Ảnh bài viết (mỗi bài 1 ảnh)**
+
+- Form tạo/sửa bài viết có ô tải ảnh lên (`image`) và ô mô tả ảnh (`image_alt`); ảnh hợp lệ là `jpg, jpeg, png, webp, gif`, tối đa 4 MB.
+- Ảnh được lưu trên disk `public` trong thư mục `storage/app/public/posts/`, tên file đã bỏ dấu tiếng Việt.
+- Đúng một ảnh cho mỗi bài, dùng chung cho **màn danh sách** (thumbnail trong card) và **màn chi tiết** (ảnh bìa + thẻ `og:image` / `twitter:image` khi chia sẻ).
+- Sửa bài: tải ảnh mới sẽ thay và xoá ảnh cũ; tick "Xóa ảnh hiện tại" sẽ bỏ ảnh. Xoá bài sẽ xoá luôn file ảnh.
+- Để ảnh hiển thị được trên trình duyệt, cần tạo symlink `public/storage` **một lần** sau khi cài đặt:
+
+```bash
+php artisan storage:link
+```
+
+**Phân tích tương tác (chỉ admin)**
+
+- Đếm số lượt xem, lượt chia sẻ và lượt yêu thích (❤️) cho từng bài viết, lưu trong `posts.*_count` và bảng `post_events`.
+- Trang `/admin/analytics`: KPI, biểu đồ xu hướng theo ngày, top bài viết / chủ đề / từ khoá, nguồn chia sẻ, lọc theo 7/30/90/365 ngày hoặc toàn bộ.
+- Từ khoá được **tự động tách** từ tiêu đề, tóm tắt và nội dung bài viết (đã loại bỏ từ dừng tiếng Việt), không cần nhập tag thủ công.
+- Chatbot trả lời được các câu hỏi dạng "chủ đề nào đang nhiều tương tác?", "từ khoá hot là gì?", "bài X có bao nhiêu lượt xem?" — các tool phân tích này **từ chối người dùng không phải admin**.
+
+**Chạy thử**
+
+```bash
+composer install
+cp .env.example .env && php artisan key:generate
+php artisan migrate --seed
+php artisan storage:link
+php artisan serve
+```
+
+Seeder tạo sẵn bài viết mẫu (mỗi bài một ảnh bìa tự vẽ bằng GD) và dữ liệu tương tác để trang analytics có số liệu ngay, kèm ba tài khoản demo (mật khẩu đều là `password`):
+
+| Vai trò | Email | Quyền |
+| --- | --- | --- |
+| Admin | `admin@example.com` | Xem `/admin/analytics`, chatbot trả lời câu hỏi phân tích, sửa/xoá mọi bài viết |
+| Creator | `creator@example.com` | Tạo & sửa bài viết của mình (có tải ảnh lên) |
+| User | `user@example.com` | Đọc, yêu thích ❤️, bình luận, chia sẻ |
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

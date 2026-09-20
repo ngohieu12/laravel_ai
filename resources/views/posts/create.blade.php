@@ -13,7 +13,7 @@
     <div class="bg-white rounded-xl shadow-sm border p-8">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">📝 Tạo bài viết mới</h1>
 
-        <form action="{{ route('posts.store') }}" method="POST" class="space-y-6">
+        <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
             <!-- Title -->
@@ -38,6 +38,33 @@
                 <textarea id="content" name="content" rows="15" required
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400 font-mono text-sm"
                     placeholder="Viết nội dung bài viết của bạn ở đây...">{{ old('content') }}</textarea>
+            </div>
+
+            <!-- Cover image -->
+            <div>
+                <label for="image" class="block text-sm font-medium text-gray-700 mb-1">Ảnh đại diện</label>
+                <div class="flex items-start gap-4">
+                    <div class="w-40 sm:w-48 shrink-0">
+                        <div id="image-preview" class="aspect-[4/3] rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
+                            <span id="image-preview-empty" class="text-gray-400 text-xs px-2 text-center">Chưa chọn ảnh<br>(JPG, PNG, WEBP, GIF — tối đa 4MB)</span>
+                            <img id="image-preview-img" src="" alt="Xem trước ảnh đại diện" class="hidden w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,image/gif" data-image-preview
+                            class="block w-full text-sm text-gray-600 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer border border-gray-300 rounded-lg px-3 py-2">
+                        <input type="text" id="image_alt" name="image_alt" value="{{ old('image_alt') }}" maxlength="255"
+                            class="w-full border-gray-300 rounded-lg px-4 py-2 border text-sm focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                            placeholder="Mô tả ảnh (alt) — tốt cho SEO và trình đọc màn hình">
+                        @error('image')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        @error('image_alt')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs text-gray-500">Ảnh này được dùng chung cho màn danh sách và màn chi tiết bài viết.</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Category -->
@@ -68,3 +95,6 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+    @include('components.posts.image-preview-script')
+@endpush

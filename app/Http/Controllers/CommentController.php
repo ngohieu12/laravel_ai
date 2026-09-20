@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCommentRequest;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Services\PostEngagementTracker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,7 @@ class CommentController extends Controller
     /**
      * Store a new comment or reply.
      */
-    public function store(StoreCommentRequest $request, Post $post): RedirectResponse
+    public function store(StoreCommentRequest $request, Post $post, PostEngagementTracker $engagement): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -22,6 +23,8 @@ class CommentController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
             'content' => $validated['content'],
         ]);
+
+        $engagement->trackComment($request, $post, $request->user());
 
         return redirect()
             ->route('posts.show', ['post' => $post])
