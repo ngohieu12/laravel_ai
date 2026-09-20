@@ -25,6 +25,14 @@ class CreatePostTool implements Tool
             'summary' => $schema->string()->description('Tóm tắt ngắn gọn nội dung bài viết'),
             'category' => $schema->string()->description('Danh mục bài viết (VD: "Công nghệ", "Kinh doanh")')->default('general'),
             'is_published' => $schema->boolean()->description('Đăng công khai (true) hay nháp (false)')->default(false),
+            'image' => $schema->string()
+                ->description('URL ảnh công khai dùng làm ảnh đại diện cho bài viết (mỗi bài chỉ có 1 ảnh, hiển thị ở cả danh sách và chi tiết). Để trống nếu không có ảnh.')
+                ->nullable()
+                ->default(null),
+            'image_alt' => $schema->string()
+                ->description('Mô tả ngắn cho ảnh đại diện (alt text)')
+                ->nullable()
+                ->default(null),
         ];
     }
 
@@ -35,6 +43,8 @@ class CreatePostTool implements Tool
         $summary = $request->string('summary')->trim()->toString();
         $category = $request->string('category')->trim()->value('general');
         $isPublished = $request->boolean('is_published', false);
+        $image = $request->string('image')->trim()->toString();
+        $imageAlt = $request->string('image_alt')->trim()->toString();
 
         if ($title === '') {
             return 'Vui lòng cung cấp tiêu đề bài viết.';
@@ -61,6 +71,9 @@ class CreatePostTool implements Tool
                 'category' => $category,
                 'user_id' => auth()->id(),
                 'is_published' => $isPublished,
+                // Only public http(s) URLs are accepted from the model.
+                'image' => Str::startsWith($image, ['http://', 'https://']) ? $image : null,
+                'image_alt' => $imageAlt !== '' ? $imageAlt : null,
             ]);
         } catch (ValidationException $e) {
             return "Lỗi dữ liệu: {$e->getMessage()}";
@@ -78,6 +91,7 @@ class CreatePostTool implements Tool
             "- Danh mục: {$post->category}\n".
             "- Tóm tắt: {$post->summary}\n".
             "- Slug: {$post->slug}\n".
+            ($post->image ? "- Ảnh đại diện: {$post->image}\n" : '').
             "- ID: {$post->id}";
     }
 }

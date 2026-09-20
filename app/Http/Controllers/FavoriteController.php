@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Services\PostEngagementTracker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,10 +13,11 @@ class FavoriteController extends Controller
     /**
      * Toggle favorite status for the given post.
      */
-    public function toggle(Request $request, Post $post): RedirectResponse
+    public function toggle(Request $request, Post $post, PostEngagementTracker $engagement): RedirectResponse
     {
         $user = $request->user();
         $nowFavorited = $user->toggleFavorite($post);
+        $engagement->trackFavorite($request, $post, $nowFavorited, $user);
         $status = $nowFavorited ? 'added' : 'removed';
         $message = $nowFavorited
             ? 'Đã thêm bài viết vào danh sách yêu thích.'

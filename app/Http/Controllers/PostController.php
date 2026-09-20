@@ -6,7 +6,10 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Services\PostEngagementTracker;
+use App\Services\PostImage;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 
 class PostController extends Controller
 {
@@ -34,6 +37,12 @@ class PostController extends Controller
         switch ($sort) {
             case 'favorites':
                 $query->orderByDesc('favorites_count')->orderByDesc('created_at');
+                break;
+            case 'views':
+                $query->orderByDesc('views_count')->orderByDesc('created_at');
+                break;
+            case 'shares':
+                $query->orderByDesc('shares_count')->orderByDesc('created_at');
                 break;
             case 'oldest':
                 $query->orderBy('created_at');
@@ -67,30 +76,43 @@ class PostController extends Controller
     /**
      * Store a newly created post.
      */
-    public function store(StorePostRequest $request)
+    public function store(StorePostRequest $request, PostImage $images)
     {
         $validated = $request->validated();
         $validated['is_published'] = $request->boolean('is_published');
         $validated['user_id'] = auth()->id();
 
-        Post::create($validated);
+        $image = $request->file('image');
 
-        return redirect()->route('posts.index')->with('success', 'Bài viết đã được tạo thành công!');
+        if ($image instanceof UploadedFile) {
+            $validated['image'] = $images->store($image);
+        }
+
+        $post = Post::create($validated);
+
+        return redirect()->route('posts.show', $post)->with('success', 'Bài viết đã được tạo thành công!');
     }
 
     /**
      * Display the specified post.
      */
-    public function show(Request $request, Post $post)
+    public function show(Request $request, Post $post, PostEngagementTracker $engagement)
     {
-        $post->favorites_count = $post->favoritedBy()->count();
         $user = $request->user();
+
+        // Count this visit (deduplicated per visitor) before rendering the numbers.
+        if ($engagement->trackView($request, $post, $user)) {
+            $post->views_count = (int) $post->views_count + 1;
+        }
+
+        $post->favorites_count = $post->favoritedBy()->count();
         $isFavorited = $user ? $user->hasFavorited($post) : false;
 
         $comments = Comment::loadForPost($post, $user);
         $commentsCount = $post->comments()->count();
+        $engagementScore = $post->engagementScore();
 
-        return view('posts.show', compact('post', 'isFavorited', 'comments', 'commentsCount'));
+        return view('posts.show', compact('post', 'isFavorited', 'comments', 'commentsCount', 'engagementScore'));
     }
 
     /**
@@ -106,14 +128,29 @@ class PostController extends Controller
     /**
      * Update the specified post.
      */
-    public function update(UpdatePostRequest $request, Post $post)
+    public function update(UpdatePostRequest $request, Post $post, PostImage $images)
     {
         $this->authorizeEdit($post);
 
         $validated = $request->validated();
         $validated['is_published'] = $request->boolean('is_published');
 
+        $previousImage = $post->image;
+        $image = $request->file('image');
+
+        if ($image instanceof UploadedFile) {
+            $validated['image'] = $images->store($image);
+        } elseif ($request->boolean('remove_image')) {
+            $validated['image'] = null;
+            $validated['image_alt'] = null;
+        }
+
         $post->update($validated);
+
+        // The old file is garbage once it has been replaced or removed.
+        if ($post->image !== $previousImage) {
+            $images->delete($previousImage);
+        }
 
         return redirect()->route('posts.show', $post)->with('success', 'Bài viết đã được cập nhật thành công!');
     }
@@ -137,8 +174,10 @@ class PostController extends Controller
     /**
      * Remove the specified post.
      */
-    public function destroy(Post $post)
+    public function destroy(Post $post, PostImage $images)
     {
+        $images->forget($post);
+
         $post->delete();
 
         return redirect()->route('posts.index')->with('success', 'Bài viết đã được xóa thành công!');

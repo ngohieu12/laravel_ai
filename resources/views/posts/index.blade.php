@@ -14,6 +14,10 @@
             <h1 class="text-2xl font-bold text-gray-800">
                 @if($isSortFav && $currentCat)
                     ⭐ Bài viết yêu thích nhất — 📂 {{ ucfirst($currentCat) }}
+                @elseif(($sort ?? '') === 'views')
+                    👁️ Bài viết xem nhiều nhất
+                @elseif(($sort ?? '') === 'shares')
+                    🔗 Bài viết chia sẻ nhiều nhất
                 @elseif($isSortFav)
                     ⭐ Bài viết được yêu thích nhiều nhất
                 @elseif($currentCat)
@@ -84,6 +88,8 @@
                     <option value="newest" {{ ($sort ?? 'newest') === 'newest' ? 'selected' : '' }}>🕒 Mới nhất</option>
                     <option value="oldest" {{ ($sort ?? '') === 'oldest' ? 'selected' : '' }}>🕒 Cũ nhất</option>
                     <option value="favorites" {{ ($sort ?? '') === 'favorites' ? 'selected' : '' }}>❤️ Yêu thích nhiều</option>
+                    <option value="views" {{ ($sort ?? '') === 'views' ? 'selected' : '' }}>👁️ Xem nhiều</option>
+                    <option value="shares" {{ ($sort ?? '') === 'shares' ? 'selected' : '' }}>🔗 Chia sẻ nhiều</option>
                 </select>
             </div>
             <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg transition">
@@ -103,59 +109,67 @@
             @foreach($posts as $post)
                 <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
                     <div class="p-6">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $post->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                        {{ $post->is_published ? 'Đã xuất bản' : 'Bản nháp' }}
-                                    </span>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                                        {{ ucfirst($post->category) }}
-                                    </span>
+                        <div class="flex flex-col sm:flex-row gap-5">
+                            <x-posts.thumbnail :post="$post" />
+
+                            <div class="flex flex-1 flex-col sm:flex-row justify-between items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $post->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                            {{ $post->is_published ? 'Đã xuất bản' : 'Bản nháp' }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                            {{ ucfirst($post->category) }}
+                                        </span>
+                                    </div>
+                                    <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
+                                        {{ $post->title }}
+                                    </a>
+                                    <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-500">
+                                        <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
+                                        <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
+                                        <span>❤️ {{ $post->favorites_count ?? 0 }} lượt yêu thích</span>
+                                        <span title="Lượt xem">👁️ {{ number_format($post->views_count ?? 0) }}</span>
+                                        <span title="Lượt chia sẻ">🔗 {{ number_format($post->shares_count ?? 0) }}</span>
+                                    </div>
                                 </div>
-                                <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
-                                    {{ $post->title }}
-                                </a>
-                                <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
-                                <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                                    <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
-                                    <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
-                                    <span>❤️ {{ $post->favorites_count ?? 0 }} lượt yêu thích</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2 ml-4">
-                                @auth
-                                <form action="{{ route('posts.favorite', $post) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit"
-                                        class="p-2 rounded-lg transition {{ in_array($post->id, $favoritedIds ?? []) ? 'text-red-500 hover:text-red-700 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50' }}"
-                                        title="{{ in_array($post->id, $favoritedIds ?? []) ? 'Bỏ yêu thích' : 'Yêu thích' }}">
-                                        @if(in_array($post->id, $favoritedIds ?? []))
-                                            ❤️
-                                        @else
+
+                                <div class="flex items-center space-x-2 sm:ml-4">
+                                    @auth
+                                        <form action="{{ route('posts.favorite', $post) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit"
+                                                class="p-2 rounded-lg transition {{ in_array($post->id, $favoritedIds ?? []) ? 'text-red-500 hover:text-red-700 bg-red-50' : 'text-gray-400 hover:text-red-500 hover:bg-red-50' }}"
+                                                title="{{ in_array($post->id, $favoritedIds ?? []) ? 'Bỏ yêu thích' : 'Yêu thích' }}">
+                                                @if(in_array($post->id, $favoritedIds ?? []))
+                                                    ❤️
+                                                @else
+                                                    🤍
+                                                @endif
+                                                <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <a href="{{ route('login') }}" class="p-2 rounded-lg transition text-gray-400 hover:text-red-500 hover:bg-red-50" title="Đăng nhập để yêu thích">
                                             🤍
-                                        @endif
-                                        <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
-                                    </button>
-                                </form>
-                                @else
-                                <a href="{{ route('login') }}" class="p-2 rounded-lg transition text-gray-400 hover:text-red-500 hover:bg-red-50" title="Đăng nhập để yêu thích">
-                                    🤍
-                                    <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
-                                </a>
-                                @endauth
-                                @auth
-                                <a href="{{ route('posts.edit', $post) }}" class="p-2 text-gray-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition" title="Sửa">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                </a>
-                                <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                </form>
-                                @endauth
+                                            <span class="text-xs ml-0.5">{{ $post->favorites_count ?? 0 }}</span>
+                                        </a>
+                                    @endauth
+
+                                    @auth
+                                        <a href="{{ route('posts.edit', $post) }}" class="p-2 text-gray-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition" title="Sửa">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        </a>
+                                        <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    @endauth
+                                </div>
                             </div>
                         </div>
                     </div>

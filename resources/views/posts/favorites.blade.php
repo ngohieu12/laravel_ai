@@ -63,38 +63,45 @@
             @foreach($posts as $post)
                 <div class="bg-white rounded-xl shadow-sm border hover:shadow-md transition">
                     <div class="p-6">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $post->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                        {{ $post->is_published ? 'Đã xuất bản' : 'Bản nháp' }}
-                                    </span>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                                        {{ ucfirst($post->category) }}
-                                    </span>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700" title="Yêu thích lúc">
-                                        ⭐ {{ $post->pivot->created_at->format('d/m/Y H:i') }}
-                                    </span>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
-                                        ❤️ {{ $post->favorites_count ?? 0 }}
-                                    </span>
+                        <div class="flex flex-col sm:flex-row gap-5">
+                            <x-posts.thumbnail :post="$post" />
+
+                            <div class="flex flex-1 flex-col sm:flex-row justify-between items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $post->is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                            {{ $post->is_published ? 'Đã xuất bản' : 'Bản nháp' }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                                            {{ ucfirst($post->category) }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700" title="Yêu thích lúc">
+                                            ⭐ {{ $post->pivot->created_at->format('d/m/Y H:i') }}
+                                        </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                                            ❤️ {{ $post->favorites_count ?? 0 }}
+                                        </span>
+                                    </div>
+                                    <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
+                                        {{ $post->title }}
+                                    </a>
+                                    <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
+                                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-500">
+                                        <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
+                                        <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
+                                        <span title="Lượt xem">👁️ {{ number_format($post->views_count ?? 0) }}</span>
+                                        <span title="Lượt chia sẻ">🔗 {{ number_format($post->shares_count ?? 0) }}</span>
+                                    </div>
                                 </div>
-                                <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
-                                    {{ $post->title }}
-                                </a>
-                                <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
-                                <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                                    <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
-                                    <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
+
+                                <div class="flex items-center space-x-2 sm:ml-4">
+                                    <form action="{{ route('posts.favorite', $post) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition" title="Bỏ yêu thích">
+                                            ❤️
+                                        </button>
+                                    </form>
                                 </div>
-                            </div>
-                            <div class="flex items-center space-x-2 ml-4">
-                                <form action="{{ route('posts.favorite', $post) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition" title="Bỏ yêu thích">
-                                        ❤️
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -62,6 +63,14 @@ class Comment extends Model
     {
         return $this->belongsToMany(User::class, 'comment_favorites', 'comment_id', 'user_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Comments written since the given moment.
+     */
+    public function scopeSince(Builder $query, ?\DateTimeInterface $since): Builder
+    {
+        return $since ? $query->where('created_at', '>=', $since) : $query;
     }
 
     // ------------- Accessors -------------

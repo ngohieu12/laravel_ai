@@ -63,6 +63,12 @@
                            class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
                             🤖 Chatbot AI
                         </a>
+                        @if(auth()->user()->isAdmin())
+                        <a href="{{ route('admin.analytics.index') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('admin.analytics.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
+                            📊 Phân tích
+                        </a>
+                        @endif
                         @endauth
                     </nav>
                 </div>
@@ -125,6 +131,12 @@
                    class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
                     🤖 Chatbot AI
                 </a>
+                @if(auth()->user()->isAdmin())
+                <a href="{{ route('admin.analytics.index') }}"
+                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('admin.analytics.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                    📊 Phân tích tương tác
+                </a>
+                @endif
                 @if(auth()->user()->hasRole('admin', 'creator'))
                 <a href="{{ route('posts.create') }}"
                    class="block px-3 py-2 rounded-lg text-base font-medium bg-slate-700 text-white text-center mt-2">
@@ -233,6 +245,9 @@
                         @auth
                         <li><a href="{{ route('favorites.index') }}" class="text-gray-400 hover:text-white transition">⭐ Bài yêu thích</a></li>
                         <li><a href="{{ route('chatbot.index') }}" class="text-gray-400 hover:text-white transition">🤖 Trợ lý AI</a></li>
+                        @if(auth()->user()->isAdmin())
+                        <li><a href="{{ route('admin.analytics.index') }}" class="text-gray-400 hover:text-white transition">📊 Phân tích tương tác</a></li>
+                        @endif
                         @if(auth()->user()->hasRole('admin', 'creator'))
                         <li><a href="{{ route('posts.create') }}" class="text-gray-400 hover:text-white transition">➕ Viết bài mới</a></li>
                         @endif

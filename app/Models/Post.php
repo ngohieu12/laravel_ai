@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\PostImage;
+use App\Support\VietnameseText;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +21,8 @@ class Post extends Model
         'slug',
         'summary',
         'content',
+        'image',
+        'image_alt',
         'category',
         'user_id',
         'is_published',
@@ -26,11 +31,61 @@ class Post extends Model
     protected $casts = [
         'is_published' => 'boolean',
         'user_id' => 'integer',
+        'views_count' => 'integer',
+        'shares_count' => 'integer',
+        'favorites_count' => 'integer',
+        'comments_count' => 'integer',
+    ];
+
+    /**
+     * Relative weight of each interaction, used to rank "hot" content.
+     *
+     * @var array<string, float>
+     */
+    public const ENGAGEMENT_WEIGHTS = [
+        'views' => 1.0,
+        'shares' => 4.0,
+        'favorites' => 6.0,
+        'comments' => 3.0,
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Resolved cover URL plus the `image` value it was resolved from, so the
+     * views can call imageUrl() repeatedly (meta tags + cover) at no cost while
+     * still seeing a fresh value if the attribute changes.
+     */
+    private ?string $imageUrlCache = null;
+
+    private string $imageUrlCacheKey = '\0';
+
+    /**
+     * Public URL of the post's cover image (null when the post has none).
+     */
+    public function imageUrl(): ?string
+    {
+        $key = (string) $this->image;
+
+        if ($this->imageUrlCacheKey !== $key) {
+            $this->imageUrlCache = app(PostImage::class)->url($this->image);
+            $this->imageUrlCacheKey = $key;
+        }
+
+        return $this->imageUrlCache;
+    }
+
+    /**
+     * Alt text of the cover image, falling back to the post title.
+     */
+    public function imageAlt(): string
+    {
+        $alt = trim((string) $this->image_alt);
+
+        return $alt !== '' ? $alt : (string) $this->title;
     }
 
     /**
@@ -51,11 +106,41 @@ class Post extends Model
     }
 
     /**
+     * Engagement events recorded for this post (views, shares, favorites, comments).
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(PostEvent::class);
+    }
+
+    /**
      * Count of users who favorited this post.
      */
     public function favoritesCount(): int
     {
         return $this->favoritedBy()->count();
+    }
+
+    /**
+     * Total interactions recorded for this post.
+     */
+    public function totalInteractions(): int
+    {
+        return (int) $this->views_count + (int) $this->shares_count + (int) $this->favorites_count + (int) $this->comments_count;
+    }
+
+    /**
+     * Weighted engagement score — the number used to decide what is "hot".
+     */
+    public function engagementScore(): float
+    {
+        return round(
+            ((int) $this->views_count * self::ENGAGEMENT_WEIGHTS['views'])
+            + ((int) $this->shares_count * self::ENGAGEMENT_WEIGHTS['shares'])
+            + ((int) $this->favorites_count * self::ENGAGEMENT_WEIGHTS['favorites'])
+            + ((int) $this->comments_count * self::ENGAGEMENT_WEIGHTS['comments']),
+            1,
+        );
     }
 
     /**
@@ -89,45 +174,20 @@ class Post extends Model
 
     private function generateSlug(string $title, ?int $excludeId = null): string
     {
-        // Transliterate Vietnamese characters to ASCII
-        $map = [
-            'à' => 'a', 'á' => 'a', 'ả' => 'a', 'ã' => 'a', 'ạ' => 'a',
-            'ă' => 'a', 'ằ' => 'a', 'ắ' => 'a', 'ẳ' => 'a', 'ẵ' => 'a', 'ặ' => 'a',
-            'â' => 'a', 'ầ' => 'a', 'ấ' => 'a', 'ẩ' => 'a', 'ẫ' => 'a', 'ậ' => 'a',
-            'đ' => 'd',
-            'è' => 'e', 'é' => 'e', 'ẻ' => 'e', 'ẽ' => 'e', 'ẹ' => 'e',
-            'ê' => 'e', 'ề' => 'e', 'ế' => 'e', 'ể' => 'e', 'ễ' => 'e', 'ệ' => 'e',
-            'ì' => 'i', 'í' => 'i', 'ỉ' => 'i', 'ĩ' => 'i', 'ị' => 'i',
-            'ò' => 'o', 'ó' => 'o', 'ỏ' => 'o', 'õ' => 'o', 'ọ' => 'o',
-            'ô' => 'o', 'ồ' => 'o', 'ố' => 'o', 'ổ' => 'o', 'ỗ' => 'o', 'ộ' => 'o',
-            'ơ' => 'o', 'ờ' => 'o', 'ớ' => 'o', 'ở' => 'o', 'ỡ' => 'o', 'ợ' => 'o',
-            'ù' => 'u', 'ú' => 'u', 'ủ' => 'u', 'ũ' => 'u', 'ụ' => 'u',
-            'ư' => 'u', 'ừ' => 'u', 'ứ' => 'u', 'ử' => 'u', 'ữ' => 'u', 'ự' => 'u',
-            'ỳ' => 'y', 'ý' => 'y', 'ỷ' => 'y', 'ỹ' => 'y', 'ỵ' => 'y',
-            'À' => 'A', 'Á' => 'A', 'Ả' => 'A', 'Ã' => 'A', 'Ạ' => 'A',
-            'Ă' => 'A', 'Ằ' => 'A', 'Ắ' => 'A', 'Ẳ' => 'A', 'Ẵ' => 'A', 'Ặ' => 'A',
-            'Â' => 'A', 'Ầ' => 'A', 'Ấ' => 'A', 'Ẩ' => 'A', 'Ẫ' => 'A', 'Ậ' => 'A',
-            'Đ' => 'D',
-            'È' => 'E', 'É' => 'E', 'Ẻ' => 'E', 'Ẽ' => 'E', 'Ẹ' => 'E',
-            'Ê' => 'E', 'Ề' => 'E', 'Ế' => 'E', 'Ể' => 'E', 'Ễ' => 'E', 'Ệ' => 'E',
-            'Ì' => 'I', 'Í' => 'I', 'Ỉ' => 'I', 'Ĩ' => 'I', 'Ị' => 'I',
-            'Ò' => 'O', 'Ó' => 'O', 'Ỏ' => 'O', 'Õ' => 'O', 'Ọ' => 'O',
-            'Ô' => 'O', 'Ồ' => 'O', 'Ố' => 'O', 'Ổ' => 'O', 'Ỗ' => 'O', 'Ộ' => 'O',
-            'Ơ' => 'O', 'Ờ' => 'O', 'Ớ' => 'O', 'Ở' => 'O', 'Ỡ' => 'O', 'Ợ' => 'O',
-            'Ù' => 'U', 'Ú' => 'U', 'Ủ' => 'U', 'Ũ' => 'U', 'Ụ' => 'U',
-            'Ư' => 'U', 'Ừ' => 'U', 'Ứ' => 'U', 'Ử' => 'U', 'Ữ' => 'U', 'Ự' => 'U',
-            'Ỳ' => 'Y', 'Ý' => 'Y', 'Ỷ' => 'Y', 'Ỹ' => 'Y', 'Ỵ' => 'Y',
-        ];
-        $slug = strtr($title, $map);
-        $slug = Str::slug($slug);
-        if (empty($slug)) {
+        // Transliterate Vietnamese characters to ASCII.
+        $slug = Str::slug(VietnameseText::toAscii($title));
+
+        if ($slug === '') {
             $slug = 'post-'.time();
         }
-        // Ensure uniqueness
+
+        // Ensure uniqueness.
         $query = static::where('slug', $slug);
+
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
+
         if ($query->exists()) {
             $slug .= '-'.time();
         }
@@ -135,14 +195,30 @@ class Post extends Model
         return $slug;
     }
 
-    public function scopePublished($query)
+    public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true);
     }
 
-    public function scopeSearch($query, string $search)
+    /**
+     * Posts created/updated since the given moment.
+     */
+    public function scopeSince(Builder $query, ?\DateTimeInterface $since): Builder
     {
-        return $query->where(function ($q) use ($search) {
+        return $since ? $query->where('created_at', '>=', $since) : $query;
+    }
+
+    /**
+     * Order by total interactions (views + shares + favorites + comments).
+     */
+    public function scopeMostInteracted(Builder $query): Builder
+    {
+        return $query->orderByRaw('(views_count + shares_count + favorites_count + comments_count) DESC');
+    }
+
+    public function scopeSearch(Builder $query, string $search): Builder
+    {
+        return $query->where(function (Builder $q) use ($search) {
             $q->where('title', 'like', "%{$search}%")
                 ->orWhere('content', 'like', "%{$search}%")
                 ->orWhere('summary', 'like', "%{$search}%");

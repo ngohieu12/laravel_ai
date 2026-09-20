@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Services\PostImage;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class PostSeeder extends Seeder
 {
@@ -89,7 +91,77 @@ class PostSeeder extends Seeder
         ];
 
         foreach ($posts as $post) {
-            Post::create($post);
+            $model = Post::create($post);
+
+            // Every demo post gets one cover image, reused on the list & detail screens.
+            $image = $this->makeCoverImage($model);
+
+            if ($image !== null) {
+                $model->update([
+                    'image' => $image,
+                    'image_alt' => 'Ảnh đại diện: '.$model->title,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Draw a small gradient cover image (16:9) with the post title on it.
+     */
+    private function makeCoverImage(Post $post): ?string
+    {
+        if (! function_exists('imagecreatetruecolor')) {
+            return null;
+        }
+
+        try {
+            $palettes = [
+                'cong-nghe' => [[15, 23, 42], [37, 99, 235]],
+                'hoc-tap' => [[6, 78, 59], [16, 185, 129]],
+                'cuoc-song' => [[120, 53, 15], [245, 158, 11]],
+                'doi-song' => [[76, 29, 149], [167, 139, 250]],
+                'default' => [[30, 41, 59], [100, 116, 139]],
+            ];
+
+            [$from, $to] = $palettes[$post->category] ?? $palettes['default'];
+
+            $width = 1200;
+            $height = 675;
+            $image = imagecreatetruecolor($width, $height);
+
+            if ($image === false) {
+                return null;
+            }
+
+            for ($y = 0; $y < $height; $y++) {
+                $ratio = $y / max(1, $height - 1);
+                $color = imagecolorallocate(
+                    $image,
+                    (int) ($from[0] + (($to[0] - $from[0]) * $ratio)),
+                    (int) ($from[1] + (($to[1] - $from[1]) * $ratio)),
+                    (int) ($from[2] + (($to[2] - $from[2]) * $ratio)),
+                );
+                imagefilledrectangle($image, 0, $y, $width, $y, (int) $color);
+            }
+
+            $slug = $post->slug ?: 'post-'.$post->id;
+
+            // GD's built-in font is ASCII only, so the slug is used as the caption.
+            $white = imagecolorallocate($image, 255, 255, 255);
+            imagestring($image, 5, 60, 300, mb_strimwidth($slug, 0, 72, '', 'UTF-8'), (int) $white);
+            imagestring($image, 3, 60, 330, mb_strtoupper($post->category, 'UTF-8'), (int) $white);
+
+            $path = PostImage::DIRECTORY.'/'.$slug.'.png';
+
+            ob_start();
+            imagepng($image);
+            $binary = (string) ob_get_clean();
+
+            Storage::disk(PostImage::DISK)->put($path, $binary);
+
+            return $path;
+        } catch (\Throwable) {
+            return null;
         }
     }
 }

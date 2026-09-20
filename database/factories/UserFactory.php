@@ -42,4 +42,34 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * An administrator (full access, including analytics).
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_ADMIN,
+        ]);
+    }
+
+    /**
+     * A content creator (can write posts, no analytics access).
+     */
+    public function creator(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_CREATOR,
+        ]);
+    }
+
+    /**
+     * A regular reader.
+     */
+    public function reader(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => User::ROLE_USER,
+        ]);
+    }
 }
