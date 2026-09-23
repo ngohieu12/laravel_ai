@@ -56,8 +56,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin/analytics')->name('admi
     Route::get('/posts/{post}', [AdminAnalyticsController::class, 'show'])->name('posts.show');
 });
 
-// Chatbot (auth)
-Route::middleware('auth')->prefix('chatbot')->name('chatbot.')->group(function () {
+// Chatbot — available to guests as well as authenticated users.
+// Read-only chatbot features do not require an account; conversations are kept
+// private to the current browser session by ChatbotController.
+Route::prefix('chatbot')->name('chatbot.')->group(function () {
     Route::get('/', [ChatbotController::class, 'index'])->name('index');
     Route::post('/chat', [ChatbotController::class, 'chat'])->name('chat');
     Route::post('/clear', [ChatbotController::class, 'clearHistory'])->name('clear');

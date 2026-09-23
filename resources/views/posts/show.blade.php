@@ -172,7 +172,6 @@
         </div>
     </article>
 
-    @auth
     <!-- Related: Ask Chatbot -->
     <div class="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border p-6 text-center">
         <p class="text-gray-700 mb-3">💬 Muốn tìm hiểu thêm về bài viết này?</p>
@@ -180,6 +179,7 @@
             <a href="{{ route('chatbot.index', ['post_id' => $post->id, 'q' => 'Giải thích chi tiết bài viết: ' . $post->title]) }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
                 🤖 Hỏi Chatbot
             </a>
+            @auth
             @if(auth()->user()->isAdmin())
             <a href="{{ route('chatbot.index', ['post_id' => $post->id, 'q' => 'Bài viết "' . $post->title . '" có bao nhiêu lượt xem, lượt chia sẻ và lượt yêu thích?']) }}"
                class="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm font-medium">
@@ -190,13 +190,14 @@
                 📈 Mở phân tích chi tiết
             </a>
             @endif
+            @endauth
         </div>
     </div>
-    @else
+    @guest
     <div class="bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border p-6 text-center">
-        <p class="text-gray-700 mb-3">🔐 <a href="{{ route('login') }}" class="text-slate-700 underline hover:text-slate-900">Đăng nhập</a> để bình luận, yêu thích và hỏi AI về bài viết này.</p>
+        <p class="text-gray-700 mb-3">🔐 <a href="{{ route('login') }}" class="text-slate-700 underline hover:text-slate-900">Đăng nhập</a> để bình luận và yêu thích. Bạn vẫn có thể hỏi AI mà không cần tài khoản.</p>
     </div>
-    @endauth
+    @endguest
 
     <!-- Comments section -->
     <section class="bg-white rounded-xl shadow-sm border p-6 sm:p-8 space-y-6">
