@@ -12,6 +12,60 @@ use Illuminate\Support\Str;
 class ChatbotController extends Controller
 {
     /**
+     * Session key containing the conversations created by this visitor.
+     *
+     * Conversations are intentionally session-scoped because guests do not
+     * have a user id. This also prevents one visitor from seeing another
+     * visitor's chat history after the chatbot becomes publicly accessible.
+     */
+    private const CONVERSATION_IDS_SESSION_KEY = 'chatbot_conversation_ids';
+
+    /**
+     * Return conversation ids that belong to the current browser session.
+     *
+     * The current id is included for backwards compatibility with sessions
+     * created before the conversation list was made session-scoped.
+     *
+     * @return list<string>
+     */
+    private function conversationIds(): array
+    {
+        $ids = session()->get(self::CONVERSATION_IDS_SESSION_KEY, []);
+
+        if (! is_array($ids)) {
+            $ids = [];
+        }
+
+        $currentId = session()->get('chatbot_conversation_id');
+        if (is_string($currentId) && $currentId !== '') {
+            $ids[] = $currentId;
+        }
+
+        return array_values(array_unique(array_filter($ids, fn ($id) => is_string($id) && $id !== '')));
+    }
+
+    /**
+     * Remember a conversation in the current visitor's session.
+     */
+    private function rememberConversation(string $conversationId): void
+    {
+        $ids = $this->conversationIds();
+        $ids[] = $conversationId;
+
+        session()->put(self::CONVERSATION_IDS_SESSION_KEY, array_values(array_unique($ids)));
+    }
+
+    /**
+     * Check whether a conversation belongs to the current visitor.
+     */
+    private function ownsConversation(?string $conversationId): bool
+    {
+        return is_string($conversationId)
+            && $conversationId !== ''
+            && in_array($conversationId, $this->conversationIds(), true);
+    }
+
+    /**
      * Display chatbot interface with conversation list.
      */
     public function index(Request $request)
@@ -35,19 +89,24 @@ class ChatbotController extends Controller
             }
         }
 
+        $conversationIds = $this->conversationIds();
         $conversations = DB::table('agent_conversations')
             ->select('id', 'title', 'created_at', 'updated_at')
+            ->whereIn('id', $conversationIds)
             ->orderByDesc('updated_at')
             ->get();
 
         $currentConversationId = session()->get('chatbot_conversation_id');
         $currentMessages = collect();
 
-        if ($currentConversationId) {
+        if ($currentConversationId && $this->ownsConversation($currentConversationId)) {
             $currentMessages = DB::table('agent_conversation_messages')
                 ->where('conversation_id', $currentConversationId)
                 ->orderBy('created_at')
                 ->get();
+        } else {
+            $currentConversationId = null;
+            session()->forget('chatbot_conversation_id');
         }
 
         return view('chatbot.index', compact('prefill', 'aiConfigured', 'conversations', 'currentConversationId', 'currentMessages', 'postContext'));
@@ -58,12 +117,17 @@ class ChatbotController extends Controller
      */
     public function show(string $id)
     {
-        $conversation = DB::table('agent_conversations')->where('id', $id)->first();
+        $conversation = DB::table('agent_conversations')
+            ->where('id', $id)
+            ->whereIn('id', $this->conversationIds())
+            ->first();
+
         if (! $conversation) {
             return response()->json(['error' => 'Conversation not found'], 404);
         }
 
         session()->put('chatbot_conversation_id', $id);
+        $this->rememberConversation($id);
 
         $messages = DB::table('agent_conversation_messages')
             ->where('conversation_id', $id)
@@ -90,6 +154,7 @@ class ChatbotController extends Controller
             'updated_at' => now(),
         ]);
         session()->put('chatbot_conversation_id', $conversationId);
+        $this->rememberConversation($conversationId);
 
         return response()->json([
             'ok' => true,
@@ -108,11 +173,17 @@ class ChatbotController extends Controller
 
         $userMessage = $request->input('message');
 
-        // Resolve conversation: prefer request body > session > create new
-        $conversationId = $request->input('conversation_id')
-            ?? session()->get('chatbot_conversation_id');
+        // Resolve conversation: prefer a session-owned request id, then the
+        // current session id, otherwise create a new conversation. Never
+        // accept an arbitrary id from the client: guests must not be able to
+        // read or append to another visitor's conversation.
+        $requestedConversationId = $request->input('conversation_id');
+        $conversationId = is_string($requestedConversationId) && $this->ownsConversation($requestedConversationId)
+            ? $requestedConversationId
+            : session()->get('chatbot_conversation_id');
 
-        if (! $conversationId || ! DB::table('agent_conversations')->where('id', $conversationId)->exists()) {
+        if (! $this->ownsConversation($conversationId)
+            || ! DB::table('agent_conversations')->where('id', $conversationId)->exists()) {
             $conversationId = Str::uuid7()->toString();
             DB::table('agent_conversations')->insert([
                 'id' => $conversationId,
@@ -120,6 +191,7 @@ class ChatbotController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            $this->rememberConversation($conversationId);
         }
 
         session()->put('chatbot_conversation_id', $conversationId);
@@ -179,6 +251,7 @@ class ChatbotController extends Controller
 
             return response()->json([
                 'reply' => "⚠️ Chatbot chưa được cấu hình AI Provider.\n\nVui lòng thêm API key vào file `.env`, ví dụ:\n\n```\nOPENAI_API_KEY=sk-xxx...\n```\n\nHoặc đổi sang provider khác trong `config/ai.php`.",
+                'conversation_id' => $conversationId,
                 'error' => true,
             ]);
         }
@@ -308,13 +381,16 @@ class ChatbotController extends Controller
     public function clearHistory()
     {
         $conversationId = session()->get('chatbot_conversation_id');
-        if ($conversationId) {
+        if ($this->ownsConversation($conversationId)) {
             DB::table('agent_conversation_messages')
                 ->where('conversation_id', $conversationId)
                 ->delete();
             DB::table('agent_conversations')
                 ->where('id', $conversationId)
                 ->delete();
+
+            $remainingIds = array_values(array_diff($this->conversationIds(), [$conversationId]));
+            session()->put(self::CONVERSATION_IDS_SESSION_KEY, $remainingIds);
         }
         session()->forget('chatbot_conversation_id');
         session()->forget('chatbot_history');

@@ -3,6 +3,7 @@
 namespace App\Ai\Tools;
 
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -38,6 +39,11 @@ class CreatePostTool implements Tool
 
     public function handle(Request $request): Stringable|string
     {
+        $user = auth()->user();
+        if (! $user instanceof User || ! $user->hasRole(User::ROLE_ADMIN, User::ROLE_CREATOR)) {
+            return '🔒 Bạn cần đăng nhập bằng tài khoản quản trị viên hoặc người tạo nội dung để tạo bài viết.';
+        }
+
         $title = $request->string('title')->trim()->toString();
         $content = $request->string('content')->trim()->toString();
         $summary = $request->string('summary')->trim()->toString();

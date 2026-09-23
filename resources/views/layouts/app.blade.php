@@ -54,14 +54,14 @@
                            class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('posts.index', 'posts.show', 'posts.create', 'posts.edit') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
                             📝 Bài viết
                         </a>
+                        <a href="{{ route('chatbot.index') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
+                            🤖 Chatbot AI
+                        </a>
                         @auth
                         <a href="{{ route('favorites.index') }}"
                            class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('favorites.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
                             ⭐ Yêu thích
-                        </a>
-                        <a href="{{ route('chatbot.index') }}"
-                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
-                            🤖 Chatbot AI
                         </a>
                         @if(auth()->user()->isAdmin())
                         <a href="{{ route('admin.analytics.index') }}"
@@ -122,14 +122,14 @@
                    class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('posts.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
                     📝 Bài viết
                 </a>
+                <a href="{{ route('chatbot.index') }}"
+                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                    🤖 Chatbot AI
+                </a>
                 @auth
                 <a href="{{ route('favorites.index') }}"
                    class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('favorites.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
                     ⭐ Yêu thích
-                </a>
-                <a href="{{ route('chatbot.index') }}"
-                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
-                    🤖 Chatbot AI
                 </a>
                 @if(auth()->user()->isAdmin())
                 <a href="{{ route('admin.analytics.index') }}"
@@ -242,9 +242,9 @@
                     <h3 class="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Khám phá</h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="{{ route('posts.index') }}" class="text-gray-400 hover:text-white transition">📝 Tất cả bài viết</a></li>
+                        <li><a href="{{ route('chatbot.index') }}" class="text-gray-400 hover:text-white transition">🤖 Trợ lý AI</a></li>
                         @auth
                         <li><a href="{{ route('favorites.index') }}" class="text-gray-400 hover:text-white transition">⭐ Bài yêu thích</a></li>
-                        <li><a href="{{ route('chatbot.index') }}" class="text-gray-400 hover:text-white transition">🤖 Trợ lý AI</a></li>
                         @if(auth()->user()->isAdmin())
                         <li><a href="{{ route('admin.analytics.index') }}" class="text-gray-400 hover:text-white transition">📊 Phân tích tương tác</a></li>
                         @endif
