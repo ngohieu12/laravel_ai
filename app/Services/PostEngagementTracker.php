@@ -45,15 +45,17 @@ class PostEngagementTracker
         $sessionHash = $this->sessionHash($request);
         $ipHash = $this->ipHash($request);
 
+        // A visitor is the same browser session or (when the session cannot be
+        // matched) the same IP — repeated views inside the window are ignored.
         $alreadyViewed = PostEvent::query()
             ->ofType(PostEvent::TYPE_VIEW)
             ->where('post_id', $post->id)
             ->where('created_at', '>=', now()->subMinutes(self::VIEW_DEDUPLICATION_MINUTES))
-            ->when(
-                $sessionHash !== null,
-                fn (Builder $query) => $query->where('session_hash', $sessionHash),
-                fn (Builder $query) => $query->where('ip_hash', $ipHash),
-            )
+            ->where(function (Builder $query) use ($sessionHash, $ipHash) {
+                $query
+                    ->when($sessionHash !== null, fn (Builder $query) => $query->orWhere('session_hash', $sessionHash))
+                    ->when($ipHash !== null, fn (Builder $query) => $query->orWhere('ip_hash', $ipHash));
+            })
             ->exists();
 
         if ($alreadyViewed) {
@@ -81,14 +83,16 @@ class PostEngagementTracker
      */
     public function trackShare(Request $request, Post $post, string $platform = 'other', ?Authenticatable $user = null): PostEvent
     {
+        $referer = substr((string) $request->headers->get('referer'), 0, 190);
+
         return $this->record(
             post: $post,
             type: PostEvent::TYPE_SHARE,
             user: $user ?? $request->user(),
-            meta: [
+            meta: array_filter([
                 'platform' => $this->normalizePlatform($platform),
-                'referer' => substr((string) $request->headers->get('referer'), 0, 190),
-            ],
+                'referer' => $referer,
+            ], fn (string $value): bool => $value !== ''),
             sessionHash: $this->sessionHash($request),
             ipHash: $this->ipHash($request),
         );
@@ -152,12 +156,14 @@ class PostEngagementTracker
 
         $column = self::COUNTER_COLUMNS[$type] ?? null;
 
-        if ($column !== null) {
-            if ($type === PostEvent::TYPE_FAVORITE_REMOVE) {
-                $post->newQuery()->whereKey($post->getKey())->where($column, '>', 0)->decrement($column);
-            } else {
-                $post->newQuery()->whereKey($post->getKey())->increment($column);
-            }
+        if ($type === PostEvent::TYPE_FAVORITE_ADD || $type === PostEvent::TYPE_FAVORITE_REMOVE) {
+            // The favorites pivot is the source of truth — resync the counter
+            // so it can never drift from the rows that actually exist.
+            $post->newQuery()->whereKey($post->getKey())->update([
+                'favorites_count' => $post->favoritedBy()->count(),
+            ]);
+        } elseif ($column !== null) {
+            $post->newQuery()->whereKey($post->getKey())->increment($column);
         }
 
         return $event;

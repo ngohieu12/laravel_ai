@@ -41,13 +41,13 @@ class GetPostEngagementTool extends AnalyticsTool
             return self::ACCESS_DENIED_MESSAGE;
         }
 
-        $post = $this->findPost($request->input('post_id'), $request->input('title'));
+        $post = $this->findPost($request->all()['post_id'] ?? null, $request->all()['title'] ?? null);
 
         if (! $post) {
             return 'Không tìm thấy bài viết nào khớp với thông tin bạn cung cấp. Bạn có thể dùng tool search_posts để tra cứu trước.';
         }
 
-        $period = $this->resolvePeriod($request->input('period', '30'));
+        $period = $this->resolvePeriod($request->string('period', '30')->toString());
         $summary = $this->analytics()->postSummary($post, $period);
 
         $totals = $summary['totals'];
@@ -87,12 +87,12 @@ class GetPostEngagementTool extends AnalyticsTool
             $result .= "\n";
         }
 
-        $platforms = $summary['platforms'];
+        $platforms = collect($summary['platforms'] ?? []);
 
-        if (is_array($platforms) && $platforms !== []) {
+        if ($platforms->isNotEmpty()) {
             $result .= "\n_📣 Chia sẻ theo nền tảng:_ ";
-            $result .= collect($platforms)
-                ->map(fn (array $platform): string => $platform['label'].' '.$this->number($platform['shares']))
+            $result .= $platforms
+                ->map(fn ($platform): string => $platform['label'].' '.$this->number($platform['shares']))
                 ->implode(' · ');
             $result .= "\n";
         }

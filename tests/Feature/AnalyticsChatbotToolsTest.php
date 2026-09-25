@@ -124,11 +124,11 @@ class AnalyticsChatbotToolsTest extends TestCase
             'views_count' => 2,
         ]);
 
-        $reply = (string) (new GetHotKeywordsTool)->handle(new Request(['limit' => 5]));
+        $reply = (string) (new GetHotKeywordsTool)->handle(new Request(['limit' => 8]));
 
         $this->assertStringContainsString('từ khoá đang có lượt tương tác cao nhất', $reply);
         $this->assertStringContainsString('python', $reply);
-        $this->assertStringContainsString('| 84', $reply); // 60 views + 4×4 shares
+        $this->assertStringContainsString('| 76', $reply); // 60 views + 4×4 shares
         $this->assertLessThan(mb_strpos($reply, 'canh'), mb_strpos($reply, 'python'));
     }
 
@@ -196,7 +196,7 @@ class AnalyticsChatbotToolsTest extends TestCase
         $this->assertStringContainsString('20 lượt xem', $reply);
         $this->assertStringContainsString('3 lượt chia sẻ', $reply);
         $this->assertStringContainsString('2 lượt yêu thích', $reply);
-        $this->assertStringContainsString('41 điểm tương tác', $reply); // 20 + 3×4 + 2×6 + 1×3
+        $this->assertStringContainsString('47 điểm tương tác', $reply); // 20 + 3×4 + 2×6 + 1×3
         $this->assertStringContainsString('laravel', $reply);
         $this->assertStringContainsString('Telegram', $reply);
     }

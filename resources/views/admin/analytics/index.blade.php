@@ -1,6 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.dashboard')
 
-@section('title', 'Phân tích tương tác — Admin')
+@section('title', 'Phân tích tổng quan')
+
+@section('content')
+
 
 @php
     use App\Services\AnalyticsService;
@@ -409,6 +412,92 @@
             </ul>
         </div>
 
+        
+    {{-- ===== Lượt lưu bài (ghim) ===== --}}
+    @isset($saves)
+    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-slate-900">📌 Lượt lưu bài (ghim)</h2>
+        <p class="text-sm text-slate-500 mt-1">Người dùng đã ghim/lưu lại bài viết để đọc sau.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
+            <div>
+                <span class="text-slate-500">Trong kỳ:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $saves['period'] }}</span>
+            </div>
+            <div>
+                <span class="text-slate-500">Tổng lượt lưu:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $saves['total'] }}</span>
+            </div>
+            <div>
+                <span class="text-slate-500">Người dùng có ghim bài:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $saves['users'] }}</span>
+            </div>
+        </div>
+        @if($saves['most_saved_post'])
+            <p class="text-sm text-slate-600 mt-3">
+                Bài viết được lưu nhiều nhất:
+                <a href="{{ route('posts.show', $saves['most_saved_post']) }}" class="font-medium text-slate-800 hover:underline">{{ $saves['most_saved_post']->title }}</a>
+                ({{ $saves['most_saved_post']->saves_count ?? 0 }} lượt lưu)
+            </p>
+        @endif
+        @if(count($topSavedPosts))
+            <div class="mt-4">
+                <h3 class="text-sm font-semibold text-slate-700 mb-2">Bài viết được lưu nhiều nhất</h3>
+                <ul class="space-y-1">
+                    @foreach($topSavedPosts as $i => $savedPost)
+                        <li class="text-sm text-slate-600">{{ $i + 1 }}. {{ $savedPost->title }} — {{ $savedPost->saves_count ?? 0 }} lượt lưu</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </section>
+    @endisset
+
+    {{-- ===== Lượt tìm kiếm ===== --}}
+    @isset($searches)
+    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-slate-900">🔍 Lượt tìm kiếm</h2>
+        <p class="text-sm text-slate-500 mt-1">Số lượt người dùng tìm kiếm bài viết trên trang công khai.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm">
+            <div>
+                <span class="text-slate-500">Trong kỳ:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $searches['period'] }}</span>
+            </div>
+            <div>
+                <span class="text-slate-500">Tổng lượt tìm kiếm:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $searches['total'] }}</span>
+            </div>
+            <div>
+                <span class="text-slate-500">Từ khoá khác nhau:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $searches['unique_queries'] }}</span>
+            </div>
+            <div>
+                <span class="text-slate-500">Không có kết quả:</span>
+                <span class="text-lg font-bold text-slate-800">{{ $searches['without_results'] }}</span>
+            </div>
+        </div>
+        @if(count($topSearches))
+            <div class="mt-4">
+                <h3 class="text-sm font-semibold text-slate-700 mb-2">Từ khóa tìm kiếm nhiều nhất</h3>
+                <ul class="space-y-1">
+                    @foreach($topSearches as $row)
+                        <li class="text-sm text-slate-600">“{{ $row['query'] }}” — {{ $row['searches'] }} lượt (trung bình {{ $row['avg_results'] }} kết quả)</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+        @if(count($recentSearches))
+            <div class="mt-4">
+                <h3 class="text-sm font-semibold text-slate-700 mb-2">Tìm kiếm gần đây</h3>
+                <ul class="space-y-1">
+                    @foreach($recentSearches as $log)
+                        <li class="text-xs text-slate-500">“{{ $log->query }}” — {{ $log->created_at->format('d/m/Y H:i') }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </section>
+    @endisset
+
         <!-- Ask the chatbot -->
         <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border p-6">
             <h2 class="text-base font-semibold text-gray-800 mb-1">🤖 Hỏi đáp với chatbot về số liệu này</h2>
@@ -432,4 +521,6 @@
         </div>
     </div>
 </div>
+
+
 @endsection

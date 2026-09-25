@@ -34,9 +34,11 @@ class GetStatsTool implements Tool
         $result .= "- Tổng bài viết: **{$totalPosts}**\n";
         $result .= "- Số danh mục: **{$totalCategories}**\n";
         $result .= "- Số tác giả: **{$totalAuthors}**\n";
-        $result .= "- Tổng lượt xem: **".number_format($totalViews)."**\n";
-        $result .= "- Tổng lượt chia sẻ: **".number_format($totalShares)."**\n";
-        $result .= "- Tổng lượt yêu thích: **".number_format($totalFavorites)."**\n";
+        $format = fn (int $value): string => number_format((float) $value, 0, ',', '.');
+
+        $result .= "- Tổng lượt xem: **".$format($totalViews)."**\n";
+        $result .= "- Tổng lượt chia sẻ: **".$format($totalShares)."**\n";
+        $result .= "- Tổng lượt yêu thích: **".$format($totalFavorites)."**\n";
 
         if ($latest) {
             $result .= "\nBài viết mới nhất: **{$latest->title}** ({$latest->created_at->format('d/m/Y')})\n";

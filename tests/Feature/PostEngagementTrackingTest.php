@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Comment;
 use App\Models\Post;
 use App\Models\PostEvent;
 use App\Models\User;
@@ -130,14 +131,15 @@ class PostEngagementTrackingTest extends TestCase
     }
 
     #[Test]
-    public function test_guests_are_redirected_to_login_when_tracking_a_share(): void
+    public function test_guests_can_share_posts_without_an_account(): void
     {
         $post = Post::factory()->create();
 
         $this->postJson(route('posts.shares.track', $post), ['platform' => 'facebook'])
-            ->assertRedirect(route('login'));
+            ->assertOk();
 
-        $this->assertSame(0, (int) $post->fresh()->shares_count);
+        $this->assertSame(1, PostEvent::query()->ofType(PostEvent::TYPE_SHARE)->count());
+        $this->assertSame(1, (int) $post->fresh()->shares_count);
     }
 
     #[Test]

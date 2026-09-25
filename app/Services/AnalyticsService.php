@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\PostEvent;
+use App\Models\PostPin;
+use App\Models\SearchLog;
 use App\Support\KeywordExtractor;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
@@ -400,12 +402,10 @@ class AnalyticsService
             })
             ->sortBy(
                 fn (array $row): string => sprintf(
-                    '%015.2f|%06d|%s',
+                    '%015.2f|%06d',
                     1_000_000_000 - $row['engagement'],
                     1_000_000 - $row['posts'],
-                    $row['keyword'],
                 ),
-                ascending: true,
             )
             ->values()
             ->take($limit);
@@ -579,10 +579,16 @@ class AnalyticsService
                 'shares' => (int) $post->shares_count,
                 'favorites' => (int) $post->favorites_count,
                 'comments' => (int) $post->comments_count,
+                'saves' => PostPin::query()->where('post_id', $post->id)->count(),
                 'engagement' => $this->engagementScore((int) $post->views_count, (int) $post->shares_count, (int) $post->favorites_count, (int) $post->comments_count),
             ],
-            'period_totals' => $counts + ['engagement' => $this->engagementScore($counts['views'], $counts['shares'], $counts['favorites'], $counts['comments'])],
-            'previous_period_totals' => $previous,
+            'period_totals' => $counts + [
+                'saves' => PostPin::query()->where('post_id', $post->id)->between($range['start'], $range['end'])->count(),
+                'engagement' => $this->engagementScore($counts['views'], $counts['shares'], $counts['favorites'], $counts['comments']),
+            ],
+            'previous_period_totals' => $previous === null ? null : $previous + [
+                'saves' => PostPin::query()->where('post_id', $post->id)->between($range['previous_start'], $range['previous_end'] ?? null)->count(),
+            ],
             'trend' => $series,
             'keywords' => $this->keywords->keywordsForPost($post),
             'platforms' => PostEvent::query()
@@ -606,6 +612,98 @@ class AnalyticsService
                 ->limit(20)
                 ->get(),
         ];
+    }
+
+    /**
+     * "Lượt lưu bài" (pins) — lifetime and per-period totals plus the most saved post.
+     *
+     * @return array<string, mixed>
+     */
+    public function savesOverview(?string $period = self::DEFAULT_PERIOD): array
+    {
+        $range = $this->resolvePeriod($period);
+
+        $query = PostPin::query();
+        $periodQuery = PostPin::query()->between($range['start'], $range['end']);
+
+        return [
+            'total' => (clone $query)->count(),
+            'period' => (clone $periodQuery)->count(),
+            'users' => (clone $query)->distinct()->count('user_id'),
+            'most_saved_post' => Post::query()
+                ->with('user')
+                ->withCount('pinnedBy as saves_count')
+                ->orderByDesc('saves_count')
+                ->first(),
+        ];
+    }
+
+    /**
+     * "Lượt tìm kiếm" — how often readers searched the public listing.
+     *
+     * @return array<string, mixed>
+     */
+    public function searchOverview(?string $period = self::DEFAULT_PERIOD): array
+    {
+        $range = $this->resolvePeriod($period);
+
+        return [
+            'total' => SearchLog::query()->count(),
+            'period' => SearchLog::query()->between($range['start'], $range['end'])->count(),
+            'unique_queries' => SearchLog::query()->distinct()->count('query'),
+            'without_results' => SearchLog::query()->where('results_count', 0)->count(),
+        ];
+    }
+
+    /**
+     * Most frequent search queries (case-insensitively grouped).
+     *
+     * @return Collection<int, array{query: string, searches: int, avg_results: float}>
+     */
+    public function topSearches(int $limit = 10): Collection
+    {
+        return SearchLog::query()
+            ->selectRaw('LOWER(query) as query, COUNT(*) as searches, AVG(results_count) as avg_results')
+            ->groupBy('query')
+            ->orderByDesc('searches')
+            ->limit(max(1, min($limit, 50)))
+            ->get()
+            ->map(fn ($row): array => [
+                'query' => (string) $row->query,
+                'searches' => (int) $row->searches,
+                'avg_results' => round((float) ($row->avg_results ?? 0), 1),
+            ])
+            ->values();
+    }
+
+    /**
+     * Latest searches (admin activity feed).
+     *
+     * @return Collection<int, SearchLog>
+     */
+    public function recentSearches(int $limit = 15): Collection
+    {
+        return SearchLog::query()
+            ->with('user:id,name')
+            ->latest()
+            ->limit(max(1, min($limit, 50)))
+            ->get();
+    }
+
+    /**
+     * Posts with the most pins (lượt lưu bài).
+     *
+     * @return Collection<int, Post>
+     */
+    public function topSavedPosts(int $limit = 5): Collection
+    {
+        return Post::query()
+            ->with('user:id,name')
+            ->withCount('pinnedBy as saves_count')
+            ->orderByDesc('saves_count')
+            ->orderByDesc('created_at')
+            ->limit(max(1, min($limit, 20)))
+            ->get();
     }
 
     /**
@@ -773,11 +871,16 @@ class AnalyticsService
     {
         $grammar = DB::connection()->getQueryGrammar();
 
-        $extract = method_exists($grammar, 'wrapJsonPath')
+        // Grammar::wrapJsonPath() is protected on recent frameworks, so check
+        // that it is actually callable as a public API before using it.
+        $hasPublicWrap = method_exists($grammar, 'wrapJsonPath')
+            && (new \ReflectionMethod($grammar, 'wrapJsonPath'))->isPublic();
+
+        $extract = $hasPublicWrap
             ? $grammar->wrapJsonPath($column, '->'.$key)
             : "json_extract({$column}, '$.{$key}')";
 
-        return 'COALESCE('.$extract.', ?)';
+        return 'COALESCE('.$extract.', '.DB::connection()->getPdo()->quote($fallback).')';
     }
 
     private function escapeLike(string $value): string

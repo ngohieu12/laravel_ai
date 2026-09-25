@@ -40,6 +40,11 @@ class AdminAnalyticsController extends Controller
         $authors = $this->analytics->topAuthors(limit: 5);
         $recentEvents = $this->analytics->recentEvents(limit: 15);
         $categories = Post::query()->distinct()->orderBy('category')->pluck('category');
+        $saves = $this->analytics->savesOverview($period);
+        $searches = $this->analytics->searchOverview($period);
+        $topSearches = $this->analytics->topSearches(limit: 10);
+        $recentSearches = $this->analytics->recentSearches(limit: 10);
+        $topSavedPosts = $this->analytics->topSavedPosts(limit: 5);
 
         return view('admin.analytics.index', [
             'overview' => $overview,
@@ -52,6 +57,11 @@ class AdminAnalyticsController extends Controller
             'authors' => $authors,
             'recentEvents' => $recentEvents,
             'categories' => $categories,
+            'saves' => $saves,
+            'searches' => $searches,
+            'topSearches' => $topSearches,
+            'recentSearches' => $recentSearches,
+            'topSavedPosts' => $topSavedPosts,
             'period' => $period,
             'metric' => $metric,
             'category' => $category,
