@@ -68,12 +68,14 @@
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
                     placeholder="VD: cong-nghe, doi-song, hoc-tap...">
                 <datalist id="category-list">
-                    @foreach(\App\Models\Category::names() as $catName)
+                    @foreach($categories as $catName)
                         <option value="{{ $catName }}">
                     @endforeach
                 </datalist>
                 <p class="text-xs text-gray-500 mt-1">Chọn danh mục có sẵn hoặc nhập danh mục mới — quản trị viên có thể sắp xếp tại mục Danh mục.</p>
             </div>
+
+            <x-posts.tag-input :value="old('tags', '')" :suggestions="$tagSuggestions" />
 
             <div class="flex items-center">
                 <input type="checkbox" id="is_published" name="is_published" value="1" {{ old('is_published') ? 'checked' : '' }}

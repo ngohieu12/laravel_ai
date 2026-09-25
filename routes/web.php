@@ -12,6 +12,7 @@ use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PinController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 
 // ---------------------------------------------------------------------------
@@ -64,7 +65,7 @@ Route::middleware(['auth', 'role:admin,creator'])->prefix('dashboard')->name('da
 });
 
 // ---------------------------------------------------------------------------
-// Admin: global analytics, categories, users
+// Admin: global analytics, categories, tags, users
 // ---------------------------------------------------------------------------
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics.index');
@@ -74,6 +75,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+    Route::post('/tags', [TagController::class, 'store'])->name('tags.store');
+    Route::delete('/tags/unused', [TagController::class, 'destroyUnused'])->name('tags.destroy-unused');
+    Route::put('/tags/{tag}', [TagController::class, 'update'])->name('tags.update');
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
 });

@@ -19,8 +19,8 @@
     <!-- Filters -->
     <form method="GET" action="{{ route('dashboard.posts.index') }}" class="bg-white rounded-xl shadow-sm p-4 border flex flex-wrap gap-3 items-end">
         <div class="flex-1 min-w-[220px]">
-            <label for="q" class="block text-xs font-medium text-gray-500 mb-1">Tìm kiếm</label>
-            <input type="text" id="q" name="q" value="{{ request('q') }}"
+            <label for="search" class="block text-xs font-medium text-gray-500 mb-1">Tìm kiếm</label>
+            <input type="text" id="search" name="search" value="{{ request('search') }}"
                 class="w-full border-gray-300 rounded-lg px-3 py-2 border text-sm focus:ring-2 focus:ring-slate-400"
                 placeholder="Tiêu đề hoặc tóm tắt...">
         </div>
@@ -41,8 +41,18 @@
                 @endforeach
             </select>
         </div>
+        @if(request()->filled('tag'))
+            <input type="hidden" name="tag" value="{{ request('tag') }}">
+            <div>
+                <span class="block text-xs font-medium text-gray-500 mb-1">Tag</span>
+                <a href="{{ request()->fullUrlWithQuery(['tag' => null, 'page' => null]) }}"
+                   class="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100" title="Bỏ lọc theo tag">
+                    #{{ $activeTag?->name ?? request('tag') }} <span aria-hidden="true">✕</span>
+                </a>
+            </div>
+        @endif
         <button type="submit" class="px-4 py-2 bg-slate-600 text-white rounded-lg text-sm">Lọc</button>
-        @if(request()->hasAny(['q', 'status', 'category']))
+        @if(request()->hasAny(['search', 'status', 'category', 'tag']))
             <a href="{{ route('dashboard.posts.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Xóa lọc</a>
         @endif
     </form>
@@ -60,6 +70,14 @@
                         </div>
                         <a href="{{ route('posts.show', $post) }}" class="text-lg font-semibold text-gray-800 hover:text-slate-600">{{ $post->title }}</a>
                         <p class="text-gray-500 text-sm line-clamp-1">{{ $post->summary }}</p>
+                        @if($post->tags->isNotEmpty())
+                            <div class="flex flex-wrap gap-1.5 mt-2">
+                                @foreach($post->tags as $tag)
+                                    <a href="{{ request()->fullUrlWithQuery(['tag' => $tag->slug, 'page' => null]) }}"
+                                       class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">#{{ $tag->name }}</a>
+                                @endforeach
+                            </div>
+                        @endif
                         <div class="flex flex-wrap gap-3 text-xs text-gray-500 mt-2">
                             <span>👁️ {{ number_format($post->views_count ?? 0) }}</span>
                             <span>🔗 {{ number_format($post->shares_count ?? 0) }}</span>

@@ -67,6 +67,10 @@
                        class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.categories.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
                         🗂️ Danh mục
                     </a>
+                    <a href="{{ route('admin.tags.index') }}"
+                       class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.tags.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
+                        🔖 Tag
+                    </a>
                     <a href="{{ route('admin.users.index') }}"
                        class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
                         👥 Người dùng

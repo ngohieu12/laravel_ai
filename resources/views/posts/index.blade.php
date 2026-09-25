@@ -24,6 +24,8 @@
                     ⭐ Bài viết được yêu thích nhiều nhất
                 @elseif($currentCat)
                     📂 Danh mục: {{ ucfirst($currentCat) }}
+                @elseif(request()->filled('tag'))
+                    🔖 Tag: #{{ $activeTag?->name ?? request('tag') }}
                 @else
                     📝 Danh sách Bài viết
                 @endif
@@ -75,10 +77,37 @@
         @endforeach
     </div>
 
+    <!-- Quick tag chips -->
+    @if($popularTags->isNotEmpty() || request()->filled('tag'))
+        <div class="flex flex-wrap gap-2 items-center">
+            <span class="text-sm text-gray-500">🔖 Tag phổ biến:</span>
+            @php
+                $activeTagSlug = request('tag');
+                $tagBaseQuery = request()->except(['tag', 'page']);
+            @endphp
+            @if($activeTagSlug)
+                <a href="{{ route('posts.index', $tagBaseQuery) }}"
+                    class="px-3 py-1 rounded-full text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition" title="Bỏ lọc theo tag">
+                    #{{ $activeTag?->name ?? $activeTagSlug }} ✕
+                </a>
+            @endif
+            @foreach($popularTags as $popularTag)
+                @continue($popularTag->slug === $activeTagSlug)
+                <a href="{{ route('posts.index', array_merge($tagBaseQuery, ['tag' => $popularTag->slug])) }}"
+                    class="px-3 py-1 rounded-full text-xs font-medium bg-white border border-indigo-100 text-indigo-700 hover:bg-indigo-50 transition">
+                    #{{ $popularTag->name }} <span class="text-indigo-400">{{ $popularTag->posts_count }}</span>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
     <!-- Search & Filter (khách cũng tìm kiếm được) -->
     <form method="GET" action="{{ route('posts.index') }}" class="bg-white rounded-xl shadow-sm p-4 border">
         @if(($view ?? 'list') === 'grid')
             <input type="hidden" name="view" value="grid">
+        @endif
+        @if(request()->filled('tag'))
+            <input type="hidden" name="tag" value="{{ request('tag') }}">
         @endif
         <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
@@ -108,7 +137,7 @@
             <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg transition">
                 Tìm kiếm
             </button>
-            @if(request('search') || request('category') || request('sort'))
+            @if(request('search') || request('category') || request('sort') || request('tag'))
                 <a href="{{ route('posts.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition">
                     Xóa bộ lọc
                 </a>
@@ -133,6 +162,7 @@
                                 {{ $post->title }}
                             </a>
                             <p class="text-gray-600 mt-2 text-sm line-clamp-3">{{ $post->summary }}</p>
+                            <x-posts.tags :tags="$post->tags" class="mt-3" />
                             <div class="mt-auto pt-4 flex items-center justify-between text-xs text-gray-500">
                                 <span>✍️ {{ $post->user?->name ?? 'Admin' }} · 📅 {{ $post->created_at->format('d/m/Y') }}</span>
                             </div>
@@ -177,6 +207,7 @@
                                             {{ $post->title }}
                                         </a>
                                         <p class="text-gray-600 mt-2 line-clamp-2">{{ $post->summary }}</p>
+                                        <x-posts.tags :tags="$post->tags" class="mt-2" />
                                         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm text-gray-500">
                                             <span>✍️ {{ $post->user?->name ?? 'Admin' }}</span>
                                             <span>📅 {{ $post->created_at->format('d/m/Y H:i') }}</span>
