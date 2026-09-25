@@ -40,9 +40,9 @@ class GetEngagementAnalyticsTool extends AnalyticsTool
         }
 
         $analytics = $this->analytics();
-        $period = $this->resolvePeriod($request->input('period', '30'));
-        $limit = $this->clampLimit($request->input('limit', 5), 5, 10);
-        $metric = (string) $request->input('metric', 'engagement');
+        $period = $this->resolvePeriod($request->string('period', '30')->toString());
+        $limit = $this->clampLimit($request->integer('limit', 5), 5, 10);
+        $metric = $request->string('metric', 'engagement')->toString();
 
         $overview = $analytics->overview($period);
         $periodTotals = $overview['period_totals'];

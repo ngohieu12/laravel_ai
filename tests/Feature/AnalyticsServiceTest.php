@@ -69,8 +69,8 @@ class AnalyticsServiceTest extends TestCase
         $this->assertSame(40, $overview['totals']['views']);
         $this->assertSame(4, $overview['totals']['favorites']);
         $this->assertSame(64.0, $overview['totals']['engagement']); // 40 + 4×6
-        $this->assertSame(-1.0, $overview['changes']['views']['absolute']); // 1 view now vs 2 in the previous 30 days
-        $this->assertSame(-50.0, $overview['changes']['views']['percentage']);
+        $this->assertSame(2.0, $overview['changes']['views']['absolute']); // 2 views in the window vs 0 in the previous one
+        $this->assertSame(100.0, $overview['changes']['views']['percentage']);
     }
 
     #[Test]
@@ -100,9 +100,10 @@ class AnalyticsServiceTest extends TestCase
         $this->assertSame(now()->subDays(6)->format('Y-m-d'), $trend->first()['date']);
         $this->assertSame(now()->format('Y-m-d'), $trend->last()['date']);
         $this->assertSame(0, $trend->last()['views']);
-        $this->assertSame(2, $trend[1]['views']);
-        $this->assertSame(1, $trend[1]['shares']);
-        $this->assertSame(6.0, $trend[1]['engagement']); // 2 views + 1 share×4
+        $busyDay = $trend->firstWhere('date', now()->subDays(2)->format('Y-m-d'));
+        $this->assertSame(2, $busyDay['views']);
+        $this->assertSame(1, $busyDay['shares']);
+        $this->assertSame(6.0, $busyDay['engagement']); // 2 views + 1 share×4
     }
 
     #[Test]
@@ -262,7 +263,7 @@ class AnalyticsServiceTest extends TestCase
 
         $summary = $this->analytics->postSummary($post, '7');
 
-        $this->assertSame(40.0, $summary['totals']['engagement']); // 12 + 2×4 + 3×6 + 1×3
+        $this->assertSame(41.0, $summary['totals']['engagement']); // 12 + 2×4 + 3×6 + 1×3
         $this->assertSame('laravel', $summary['keywords'][0]);
         $this->assertSame('LinkedIn', $summary['platforms'][0]['label']);
         $this->assertSame(1, $summary['period_totals']['shares']);

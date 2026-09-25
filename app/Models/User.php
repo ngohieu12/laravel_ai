@@ -41,6 +41,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Posts pinned (ghim / lưu lại) by this user.
+     */
+    public function pinnedPosts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'post_pins', 'user_id', 'post_id')
+            ->withTimestamps();
+    }
+
+    /**
      * Comments written by this user.
      */
     public function comments(): HasMany
@@ -63,6 +72,14 @@ class User extends Authenticatable
     public function hasFavorited(Post $post): bool
     {
         return $this->favorites()->where('post_id', $post->id)->exists();
+    }
+
+    /**
+     * Check if user has pinned the given post.
+     */
+    public function hasPinned(Post $post): bool
+    {
+        return $this->pinnedPosts()->where('post_id', $post->id)->exists();
     }
 
     /**
@@ -107,6 +124,23 @@ class User extends Authenticatable
         return true;
     }
 
+    /**
+     * Toggle pinned status for a post.
+     * Returns true if now pinned, false if unpinned.
+     */
+    public function togglePin(Post $post): bool
+    {
+        if ($this->hasPinned($post)) {
+            $this->pinnedPosts()->detach($post->id);
+
+            return false;
+        }
+
+        $this->pinnedPosts()->syncWithoutDetaching([$post->id]);
+
+        return true;
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
@@ -120,6 +154,18 @@ class User extends Authenticatable
     public function isUser(): bool
     {
         return $this->role === self::ROLE_USER;
+    }
+
+    /**
+     * Human readable role name (used in the role-specific interfaces).
+     */
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            self::ROLE_ADMIN => 'Quản trị viên',
+            self::ROLE_CREATOR => 'Người đăng bài',
+            default => 'Thành viên',
+        };
     }
 
     /**

@@ -32,7 +32,7 @@ class GetTrendingTopicsTool extends AnalyticsTool
             return self::ACCESS_DENIED_MESSAGE;
         }
 
-        $limit = $this->clampLimit($request->input('limit', 5), 5, 15);
+        $limit = $this->clampLimit($request->integer('limit', 5), 5, 15);
         $topics = $this->analytics()->topCategories(limit: $limit);
 
         if ($topics->isEmpty()) {

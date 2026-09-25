@@ -30,7 +30,7 @@ class GetTopFavoritedPostsTool implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $limit = (int) $request->input('limit', 5);
+        $limit = $request->integer('limit', 5);
         if ($limit < 1) {
             $limit = 1;
         }
@@ -38,7 +38,7 @@ class GetTopFavoritedPostsTool implements Tool
             $limit = 20;
         }
 
-        $category = $request->input('category');
+        $category = $request->all()['category'] ?? null;
         $category = is_string($category) ? trim($category) : null;
         if ($category === '') {
             $category = null;

@@ -21,7 +21,7 @@ class PostImageUploadTest extends TestCase
         Storage::fake(PostImage::DISK);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('posts.store'), $this->postPayload([
+            ->post(route('dashboard.posts.store'), $this->postPayload([
                 'image' => UploadedFile::fake()->image('anh-dai-dien.jpg'),
                 'image_alt' => 'Ảnh minh hoạ Laravel',
             ]))
@@ -100,7 +100,7 @@ class PostImageUploadTest extends TestCase
         $post = Post::factory()->create(['image' => $oldPath, 'image_alt' => 'Ảnh cũ']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->put(route('posts.update', $post), $this->postPayload([
+            ->put(route('dashboard.posts.update', $post), $this->postPayload([
                 'image' => UploadedFile::fake()->image('new.png'),
                 'image_alt' => 'Ảnh mới',
             ]))
@@ -123,7 +123,7 @@ class PostImageUploadTest extends TestCase
         $post = Post::factory()->create(['image' => $path, 'image_alt' => 'Giữ nguyên ảnh']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->put(route('posts.update', $post), $this->postPayload())
+            ->put(route('dashboard.posts.update', $post), $this->postPayload())
             ->assertRedirect();
 
         $post->refresh();
@@ -142,7 +142,7 @@ class PostImageUploadTest extends TestCase
         $post = Post::factory()->create(['image' => $path, 'image_alt' => 'Ảnh sẽ bị xoá']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->put(route('posts.update', $post), $this->postPayload(['remove_image' => '1']))
+            ->put(route('dashboard.posts.update', $post), $this->postPayload(['remove_image' => '1']))
             ->assertRedirect();
 
         $post->refresh();
@@ -161,7 +161,7 @@ class PostImageUploadTest extends TestCase
         $post = Post::factory()->create(['image' => $path]);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->delete(route('posts.destroy', $post))
+            ->delete(route('dashboard.posts.destroy', $post))
             ->assertRedirect();
 
         $this->assertDatabaseMissing('posts', ['id' => $post->id]);
@@ -174,7 +174,7 @@ class PostImageUploadTest extends TestCase
         Storage::fake(PostImage::DISK);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('posts.store'), $this->postPayload([
+            ->post(route('dashboard.posts.store'), $this->postPayload([
                 'image' => UploadedFile::fake()->create('script.php', 20, 'application/x-php'),
             ]))
             ->assertSessionHasErrors('image');
@@ -188,7 +188,7 @@ class PostImageUploadTest extends TestCase
         Storage::fake(PostImage::DISK);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('posts.store'), $this->postPayload([
+            ->post(route('dashboard.posts.store'), $this->postPayload([
                 'image' => UploadedFile::fake()->image('big.jpg')->size(5 * 1024),
             ]))
             ->assertSessionHasErrors('image');
@@ -202,7 +202,7 @@ class PostImageUploadTest extends TestCase
         Storage::fake(PostImage::DISK);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('posts.store'), $this->postPayload([
+            ->post(route('dashboard.posts.store'), $this->postPayload([
                 'image_alt' => str_repeat('a', 256),
             ]))
             ->assertSessionHasErrors('image_alt');
@@ -213,7 +213,7 @@ class PostImageUploadTest extends TestCase
     {
         Storage::fake(PostImage::DISK);
 
-        $this->post(route('posts.store'), $this->postPayload([
+        $this->post(route('dashboard.posts.store'), $this->postPayload([
             'image' => UploadedFile::fake()->image('cover.jpg'),
         ]))->assertRedirect(route('login'));
 
@@ -226,7 +226,7 @@ class PostImageUploadTest extends TestCase
         Storage::fake(PostImage::DISK);
 
         $this->actingAs(User::factory()->creator()->create())
-            ->post(route('posts.store'), $this->postPayload([
+            ->post(route('dashboard.posts.store'), $this->postPayload([
                 'image' => UploadedFile::fake()->image('cover.webp', 400, 300),
             ]))
             ->assertRedirect();

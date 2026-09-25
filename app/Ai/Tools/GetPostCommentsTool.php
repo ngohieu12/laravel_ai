@@ -30,7 +30,7 @@ class GetPostCommentsTool implements Tool
     public function handle(Request $request): Stringable|string
     {
         $keyword = $request->string('title_keyword')->toString();
-        $limit = (int) $request->input('limit', 10);
+        $limit = $request->integer('limit', 10);
         if ($limit < 1) {
             $limit = 1;
         }

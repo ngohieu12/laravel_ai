@@ -48,10 +48,10 @@
                         </div>
                     </a>
 
-                    <!-- Desktop Nav -->
+                    <!-- Desktop Nav — mỗi quyền thấy một giao diện điều hướng riêng -->
                     <nav class="hidden md:flex items-center space-x-1 ml-8">
                         <a href="{{ route('posts.index') }}"
-                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('posts.index', 'posts.show', 'posts.create', 'posts.edit') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('posts.index', 'posts.show') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
                             📝 Bài viết
                         </a>
                         <a href="{{ route('chatbot.index') }}"
@@ -63,21 +63,26 @@
                            class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('favorites.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
                             ⭐ Yêu thích
                         </a>
-                        @if(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.analytics.index') }}"
-                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('admin.analytics.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
-                            📊 Phân tích
+                        <a href="{{ route('pins.index') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('pins.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
+                            📌 Đã ghim
+                        </a>
+                        @if(auth()->user()->hasRole('admin', 'creator'))
+                        <span class="w-px h-5 bg-gray-200 mx-2"></span>
+                        <a href="{{ route('dashboard.posts.index') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('dashboard.*') ? 'bg-slate-700 text-white' : 'text-gray-600 hover:bg-slate-100 hover:text-slate-700' }}">
+                            🛠️ Quản trị bài viết
                         </a>
                         @endif
                         @endauth
                     </nav>
                 </div>
 
-                <!-- Desktop Right side -->
+                <!-- Desktop Right side — theo từng quyền -->
                 <div class="hidden md:flex items-center space-x-3">
                     @auth
                         @if(auth()->user()->hasRole('admin', 'creator'))
-                        <a href="{{ route('posts.create') }}" class="inline-flex items-center bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                        <a href="{{ route('dashboard.posts.create') }}" class="inline-flex items-center bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Bài viết mới
                         </a>
@@ -85,9 +90,9 @@
                         <div class="flex items-center space-x-3 pl-3 border-l">
                             <div class="text-right hidden sm:block">
                                 <div class="text-sm font-medium text-gray-700">{{ auth()->user()->name }}</div>
-                                <div class="text-xs text-gray-400">{{ ucfirst(auth()->user()->role) }}</div>
+                                <div class="text-xs text-gray-400">{{ auth()->user()->roleLabel() }}</div>
                             </div>
-                            <div class="w-9 h-9 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                            <div class="w-9 h-9 bg-gradient-to-br {{ auth()->user()->isAdmin() ? 'from-amber-500 to-red-600' : (auth()->user()->isCreator() ? 'from-sky-500 to-indigo-600' : 'from-slate-400 to-slate-600') }} rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                             </div>
                         </div>
@@ -119,7 +124,7 @@
             <!-- Mobile menu -->
             <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-1 border-t pt-3">
                 <a href="{{ route('posts.index') }}"
-                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('posts.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('posts.index', 'posts.show') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
                     📝 Bài viết
                 </a>
                 <a href="{{ route('chatbot.index') }}"
@@ -131,26 +136,28 @@
                    class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('favorites.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
                     ⭐ Yêu thích
                 </a>
-                @if(auth()->user()->isAdmin())
-                <a href="{{ route('admin.analytics.index') }}"
-                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('admin.analytics.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
-                    📊 Phân tích tương tác
+                <a href="{{ route('pins.index') }}"
+                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('pins.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                    📌 Đã ghim
                 </a>
-                @endif
                 @if(auth()->user()->hasRole('admin', 'creator'))
-                <a href="{{ route('posts.create') }}"
+                <a href="{{ route('dashboard.posts.index') }}"
+                   class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('dashboard.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                    🛠️ Quản trị bài viết
+                </a>
+                <a href="{{ route('dashboard.posts.create') }}"
                    class="block px-3 py-2 rounded-lg text-base font-medium bg-slate-700 text-white text-center mt-2">
                     ➕ Bài viết mới
                 </a>
                 @endif
                 <div class="flex items-center justify-between px-3 py-2 mt-2 border-t pt-3">
                     <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        <div class="w-9 h-9 bg-gradient-to-br {{ auth()->user()->isAdmin() ? 'from-amber-500 to-red-600' : 'from-slate-400 to-slate-600' }} rounded-full flex items-center justify-center text-white font-semibold text-sm">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
-                        <div>
+                        <div class="leading-tight">
                             <div class="text-sm font-medium text-gray-800">{{ auth()->user()->name }}</div>
-                            <div class="text-xs text-gray-400">{{ ucfirst(auth()->user()->role) }}</div>
+                            <div class="text-xs text-gray-400">{{ auth()->user()->roleLabel() }}</div>
                         </div>
                     </div>
                     <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -245,11 +252,10 @@
                         <li><a href="{{ route('chatbot.index') }}" class="text-gray-400 hover:text-white transition">🤖 Trợ lý AI</a></li>
                         @auth
                         <li><a href="{{ route('favorites.index') }}" class="text-gray-400 hover:text-white transition">⭐ Bài yêu thích</a></li>
-                        @if(auth()->user()->isAdmin())
-                        <li><a href="{{ route('admin.analytics.index') }}" class="text-gray-400 hover:text-white transition">📊 Phân tích tương tác</a></li>
-                        @endif
+                        <li><a href="{{ route('pins.index') }}" class="text-gray-400 hover:text-white transition">📌 Bài đã ghim</a></li>
                         @if(auth()->user()->hasRole('admin', 'creator'))
-                        <li><a href="{{ route('posts.create') }}" class="text-gray-400 hover:text-white transition">➕ Viết bài mới</a></li>
+                        <li><a href="{{ route('dashboard.posts.index') }}" class="text-gray-400 hover:text-white transition">🛠️ Quản trị bài viết</a></li>
+                        <li><a href="{{ route('dashboard.posts.create') }}" class="text-gray-400 hover:text-white transition">➕ Viết bài mới</a></li>
                         @endif
                         @else
                         <li><a href="{{ route('login') }}" class="text-gray-400 hover:text-white transition">🔐 Đăng nhập</a></li>

@@ -26,7 +26,7 @@ class GetTopLikedCommentsTool implements Tool
 
     public function handle(Request $request): Stringable|string
     {
-        $limit = (int) $request->input('limit', 5);
+        $limit = $request->integer('limit', 5);
         if ($limit < 1) {
             $limit = 1;
         }

@@ -106,6 +106,15 @@ class Post extends Model
     }
 
     /**
+     * Users who pinned (ghim / lưu lại) this post.
+     */
+    public function pinnedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'post_pins', 'post_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    /**
      * Engagement events recorded for this post (views, shares, favorites, comments).
      */
     public function events(): HasMany
@@ -119,6 +128,35 @@ class Post extends Model
     public function favoritesCount(): int
     {
         return $this->favoritedBy()->count();
+    }
+
+    /**
+     * Count of users who pinned (lưu) this post.
+     */
+    public function savesCount(): int
+    {
+        return $this->pinnedBy()->count();
+    }
+
+    /**
+     * Check if a given user has pinned this post.
+     */
+    public function isPinnedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $this->pinnedBy()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Whether the given user may edit / delete / analyse this post:
+     * admins manage everything, creators manage their own posts.
+     */
+    public function isManagedBy(User $user): bool
+    {
+        return $user->isAdmin() || ($user->isCreator() && $this->user_id === $user->id);
     }
 
     /**
@@ -163,6 +201,11 @@ class Post extends Model
             if (empty($post->slug)) {
                 $post->slug = $post->generateSlug($post->title);
             }
+        });
+
+        static::saved(function (Post $post) {
+            // Keep the category registry in sync with the values posts use.
+            Category::register((string) $post->category);
         });
 
         static::updating(function (Post $post) {

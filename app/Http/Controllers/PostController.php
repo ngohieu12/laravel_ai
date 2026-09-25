@@ -2,34 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorePostRequest;
-use App\Http\Requests\UpdatePostRequest;
+use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Models\SearchLog;
 use App\Services\PostEngagementTracker;
-use App\Services\PostImage;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 
+/**
+ * Public (frontend) reading surface: the post listing and post detail.
+ *
+ * This controller never exposes edit / delete links or forms — managing posts
+ * lives behind the dashboard (see DashboardPostController).
+ */
 class PostController extends Controller
 {
     /**
-     * Display a listing of posts.
+     * Display the public listing of published posts.
      */
     public function index(Request $request)
     {
-        $query = Post::query()->withCount(['favoritedBy as favorites_count']);
+        $query = Post::query()
+            ->published()
+            ->withCount([
+                'favoritedBy as favorites_count',
+                'pinnedBy as saves_count',
+            ]);
 
         if ($request->filled('search')) {
-            $query->search($request->search);
+            $query->search($request->string('search')->toString());
         }
 
         if ($request->filled('category')) {
             $query->where('category', $request->category);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('is_published', $request->input('status') === 'published');
         }
 
         // Sorting
@@ -44,6 +49,9 @@ class PostController extends Controller
             case 'shares':
                 $query->orderByDesc('shares_count')->orderByDesc('created_at');
                 break;
+            case 'saves':
+                $query->orderByDesc('saves_count')->orderByDesc('created_at');
+                break;
             case 'oldest':
                 $query->orderBy('created_at');
                 break;
@@ -55,50 +63,33 @@ class PostController extends Controller
         }
 
         $posts = $query->paginate(10)->withQueryString();
-        $categories = Post::distinct()->pluck('category');
+        $categories = Category::query()->ordered()->pluck('name');
 
-        $user = $request->user();
-        $favoritedIds = $user
-            ? $user->favorites()->pluck('posts.id')->toArray()
-            : [];
+        // Grid / list viewing mode of the public listing.
+        $view = $request->input('view') === 'grid' ? 'grid' : 'list';
 
-        return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'sort'));
-    }
-
-    /**
-     * Show the form for creating a new post.
-     */
-    public function create()
-    {
-        return view('posts.create');
-    }
-
-    /**
-     * Store a newly created post.
-     */
-    public function store(StorePostRequest $request, PostImage $images)
-    {
-        $validated = $request->validated();
-        $validated['is_published'] = $request->boolean('is_published');
-        $validated['user_id'] = auth()->id();
-
-        $image = $request->file('image');
-
-        if ($image instanceof UploadedFile) {
-            $validated['image'] = $images->store($image);
+        if ($request->filled('search')) {
+            SearchLog::record($request->string('search')->toString(), $request->user()?->id, $posts->total());
         }
 
-        $post = Post::create($validated);
+        $user = $request->user();
+        $favoritedIds = $user ? $user->favorites()->pluck('posts.id')->all() : [];
+        $pinnedIds = $user ? $user->pinnedPosts()->pluck('posts.id')->all() : [];
 
-        return redirect()->route('posts.show', $post)->with('success', 'Bài viết đã được tạo thành công!');
+        return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'pinnedIds', 'sort', 'view'));
     }
 
     /**
-     * Display the specified post.
+     * Display the specified post (published posts for everyone; drafts only
+     * for their author and admins).
      */
     public function show(Request $request, Post $post, PostEngagementTracker $engagement)
     {
         $user = $request->user();
+
+        if (! $post->is_published && ! ($user && $post->isManagedBy($user))) {
+            abort(404);
+        }
 
         // Count this visit (deduplicated per visitor) before rendering the numbers.
         if ($engagement->trackView($request, $post, $user)) {
@@ -106,80 +97,14 @@ class PostController extends Controller
         }
 
         $post->favorites_count = $post->favoritedBy()->count();
+        $post->saves_count = $post->savesCount();
         $isFavorited = $user ? $user->hasFavorited($post) : false;
+        $isPinned = $user ? $user->hasPinned($post) : false;
 
         $comments = Comment::loadForPost($post, $user);
         $commentsCount = $post->comments()->count();
         $engagementScore = $post->engagementScore();
 
-        return view('posts.show', compact('post', 'isFavorited', 'comments', 'commentsCount', 'engagementScore'));
-    }
-
-    /**
-     * Show the form for editing the specified post.
-     */
-    public function edit(Post $post)
-    {
-        $this->authorizeEdit($post);
-
-        return view('posts.edit', compact('post'));
-    }
-
-    /**
-     * Update the specified post.
-     */
-    public function update(UpdatePostRequest $request, Post $post, PostImage $images)
-    {
-        $this->authorizeEdit($post);
-
-        $validated = $request->validated();
-        $validated['is_published'] = $request->boolean('is_published');
-
-        $previousImage = $post->image;
-        $image = $request->file('image');
-
-        if ($image instanceof UploadedFile) {
-            $validated['image'] = $images->store($image);
-        } elseif ($request->boolean('remove_image')) {
-            $validated['image'] = null;
-            $validated['image_alt'] = null;
-        }
-
-        $post->update($validated);
-
-        // The old file is garbage once it has been replaced or removed.
-        if ($post->image !== $previousImage) {
-            $images->delete($previousImage);
-        }
-
-        return redirect()->route('posts.show', $post)->with('success', 'Bài viết đã được cập nhật thành công!');
-    }
-
-    /**
-     * Check if current user can edit this post.
-     */
-    private function authorizeEdit(Post $post): void
-    {
-        $user = auth()->user();
-
-        if ($user->isAdmin()) {
-            return;
-        }
-
-        if ($post->user_id !== $user->id) {
-            abort(403, 'Bạn chỉ có thể chỉnh sửa bài viết của mình.');
-        }
-    }
-
-    /**
-     * Remove the specified post.
-     */
-    public function destroy(Post $post, PostImage $images)
-    {
-        $images->forget($post);
-
-        $post->delete();
-
-        return redirect()->route('posts.index')->with('success', 'Bài viết đã được xóa thành công!');
+        return view('posts.show', compact('post', 'isFavorited', 'isPinned', 'comments', 'commentsCount', 'engagementScore'));
     }
 }

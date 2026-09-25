@@ -80,8 +80,8 @@
         @php
             $shareUrl = urlencode(route('posts.show', $post));
             $shareTitle = urlencode($post->title);
-            $canEdit = auth()->check() && (auth()->user()->isAdmin() || (auth()->user()->isCreator() && $post->user_id === auth()->id()));
-            $canDelete = auth()->check() && auth()->user()->isAdmin();
+            // Sửa / xóa / phân tích: quản trị viên mọi bài, người đăng bài với bài của mình.
+            $canManage = auth()->check() && $post->isManagedBy(auth()->user());
         @endphp
 
         <!-- Social Share bar -->
@@ -135,6 +135,20 @@
                         </span>
                     </button>
                 </form>
+                <form action="{{ route('posts.pin', $post) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 rounded-lg transition text-sm font-medium {{ $isPinned ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100' }}">
+                        @if($isPinned)
+                            📌 Đã ghim
+                        @else
+                            📍 Ghim bài
+                        @endif
+                        <span class="ml-2 px-1.5 py-0.5 rounded text-xs {{ $isPinned ? 'bg-slate-300 text-slate-800' : 'bg-gray-200 text-gray-700' }}">
+                            {{ $post->saves_count ?? 0 }}
+                        </span>
+                    </button>
+                </form>
                 @else
                 <a href="{{ route('login') }}"
                     class="inline-flex items-center px-4 py-2 rounded-lg transition text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
@@ -144,18 +158,24 @@
                         {{ $post->favorites_count ?? 0 }}
                     </span>
                 </a>
+                <a href="{{ route('login') }}"
+                    class="inline-flex items-center px-4 py-2 rounded-lg transition text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                    title="Đăng nhập để ghim bài">
+                    📍 Ghim bài
+                    <span class="ml-2 px-1.5 py-0.5 rounded text-xs bg-gray-200 text-gray-700">
+                        {{ $post->saves_count ?? 0 }}
+                    </span>
+                </a>
                 @endauth
                 <span class="hidden sm:inline">Slug: <code class="bg-gray-200 px-2 py-1 rounded">{{ $post->slug }}</code></span>
             </div>
             @auth
             <div class="flex space-x-3">
-                @if($canEdit)
-                <a href="{{ route('posts.edit', $post) }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
+                @if($canManage)
+                <a href="{{ route('dashboard.posts.edit', $post) }}" class="inline-flex items-center px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium">
                     ✏️ Chỉnh sửa
                 </a>
-                @endif
-                @if($canDelete)
-                <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
+                <form action="{{ route('dashboard.posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa bài viết này?')">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
@@ -180,12 +200,12 @@
                 🤖 Hỏi Chatbot
             </a>
             @auth
-            @if(auth()->user()->isAdmin())
+            @if($canManage)
             <a href="{{ route('chatbot.index', ['post_id' => $post->id, 'q' => 'Bài viết "' . $post->title . '" có bao nhiêu lượt xem, lượt chia sẻ và lượt yêu thích?']) }}"
                class="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm font-medium">
                 📊 Hỏi AI về tương tác bài này
             </a>
-            <a href="{{ route('admin.analytics.posts.show', $post) }}"
+            <a href="{{ auth()->user()->isAdmin() ? route('admin.analytics.posts.show', $post) : route('dashboard.analytics.posts.show', $post) }}"
                class="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm font-medium">
                 📈 Mở phân tích chi tiết
             </a>
@@ -254,7 +274,7 @@
 <script>
     // Record share clicks before the browser opens the social network.
     (function () {
-        const shareEndpoint = @json(route('posts.shares.track', $post));
+        const shareEndpoint = {!! json_encode(route('posts.shares.track', $post), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!};
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
         document.querySelectorAll('[data-share-platform]').forEach(function (element) {

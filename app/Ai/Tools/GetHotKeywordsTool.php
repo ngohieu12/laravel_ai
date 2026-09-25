@@ -32,7 +32,7 @@ class GetHotKeywordsTool extends AnalyticsTool
             return self::ACCESS_DENIED_MESSAGE;
         }
 
-        $limit = $this->clampLimit($request->input('limit', 10), 10, 20);
+        $limit = $this->clampLimit($request->integer('limit', 10), 10, 20);
         $keywords = $this->analytics()->topKeywords(limit: $limit);
 
         if ($keywords->isEmpty()) {

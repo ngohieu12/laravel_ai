@@ -40,7 +40,11 @@ abstract class AnalyticsTool implements Tool
     {
         $period = is_string($period) || is_int($period) ? trim((string) $period) : '';
 
-        if ($period === '' || in_array($period, ['all', 'tat-ca', 'tất cả'], true)) {
+        // Fold diacritics so "toàn bộ thời gian", "tất cả", ... all map to "all".
+        $normalized = mb_strtolower(\App\Support\VietnameseText::toAscii($period), 'UTF-8');
+        $normalized = trim((string) preg_replace('/[\s_-]+/', ' ', $normalized));
+
+        if ($period === '' || in_array($normalized, ['all', 'tat ca', 'toan bo', 'toan bo thoi gian', 'tat ca thoi gian'], true)) {
             return 'all';
         }
 
