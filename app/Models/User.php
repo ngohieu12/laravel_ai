@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable(['name', 'email', 'password', 'role', 'is_banned', 'ban_reason'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -22,6 +22,12 @@ class User extends Authenticatable
     public const ROLE_USER = 'user';
 
     public const ROLES = [self::ROLE_ADMIN, self::ROLE_CREATOR, self::ROLE_USER];
+
+    public const ROLE_LABELS = [
+        self::ROLE_ADMIN => 'Quản trị viên',
+        self::ROLE_CREATOR => 'Người đăng bài',
+        self::ROLE_USER => 'Thành viên',
+    ];
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -161,11 +167,33 @@ class User extends Authenticatable
      */
     public function roleLabel(): string
     {
-        return match ($this->role) {
-            self::ROLE_ADMIN => 'Quản trị viên',
-            self::ROLE_CREATOR => 'Người đăng bài',
-            default => 'Thành viên',
-        };
+        return self::ROLE_LABELS[$this->role] ?? 'Thành viên';
+    }
+
+    /**
+     * Ban / un-ban the user account.
+     */
+    public function ban(?string $reason = null): void
+    {
+        $this->forceFill([
+            'is_banned' => true,
+            'ban_reason' => $reason,
+            'banned_at' => now(),
+        ])->save();
+    }
+
+    public function unban(): void
+    {
+        $this->forceFill([
+            'is_banned' => false,
+            'ban_reason' => null,
+            'banned_at' => null,
+        ])->save();
+    }
+
+    public function isBanned(): bool
+    {
+        return (bool) $this->is_banned;
     }
 
     /**
@@ -186,6 +214,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_banned' => 'boolean',
+            'banned_at' => 'datetime',
         ];
     }
 }

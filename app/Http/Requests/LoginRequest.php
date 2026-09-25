@@ -48,6 +48,19 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+        if ($user && $user->isBanned()) {
+            Auth::logout();
+            $this->session()->invalidate();
+            $this->session()->regenerateToken();
+
+            $reason = $user->ban_reason ? ' Lý do: '.$user->ban_reason : '';
+
+            throw ValidationException::withMessages([
+                'email' => 'Tài khoản của bạn đã bị khóa.'.$reason,
+            ]);
+        }
+
         $this->session()->regenerate();
     }
 
