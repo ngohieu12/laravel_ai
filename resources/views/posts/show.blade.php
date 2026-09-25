@@ -75,6 +75,13 @@
             <div class="prose text-gray-700">
                 {!! \App\Support\HtmlSanitizer::sanitize($post->content) !!}
             </div>
+
+            @if($post->tags->isNotEmpty())
+                <div class="mt-8 pt-6 border-t flex flex-wrap items-center gap-2">
+                    <span class="text-sm text-gray-500">🔖 Tag:</span>
+                    <x-posts.tags :tags="$post->tags" size="md" />
+                </div>
+            @endif
         </div>
 
         @php

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\SearchLog;
+use App\Models\Tag;
 use App\Services\PostEngagementTracker;
 use Illuminate\Http\Request;
 
@@ -24,6 +25,7 @@ class PostController extends Controller
     {
         $query = Post::query()
             ->published()
+            ->with('tags')
             ->withCount([
                 'favoritedBy as favorites_count',
                 'pinnedBy as saves_count',
@@ -35,6 +37,14 @@ class PostController extends Controller
 
         if ($request->filled('category')) {
             $query->where('category', $request->category);
+        }
+
+        $activeTag = null;
+
+        if ($request->filled('tag')) {
+            $tagSlug = $request->string('tag')->toString();
+            $query->withTag($tagSlug);
+            $activeTag = Tag::query()->where('slug', $tagSlug)->first();
         }
 
         // Sorting
@@ -65,6 +75,15 @@ class PostController extends Controller
         $posts = $query->paginate(10)->withQueryString();
         $categories = Category::query()->ordered()->pluck('name');
 
+        // Most used tags among published posts, for the quick filter chips.
+        $popularTags = Tag::query()
+            ->whereHas('posts', fn ($q) => $q->where('is_published', true))
+            ->withCount(['posts' => fn ($q) => $q->where('is_published', true)])
+            ->orderByDesc('posts_count')
+            ->orderBy('name')
+            ->limit(15)
+            ->get();
+
         // Grid / list viewing mode of the public listing.
         $view = $request->input('view') === 'grid' ? 'grid' : 'list';
 
@@ -76,7 +95,7 @@ class PostController extends Controller
         $favoritedIds = $user ? $user->favorites()->pluck('posts.id')->all() : [];
         $pinnedIds = $user ? $user->pinnedPosts()->pluck('posts.id')->all() : [];
 
-        return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'pinnedIds', 'sort', 'view'));
+        return view('posts.index', compact('posts', 'categories', 'favoritedIds', 'pinnedIds', 'sort', 'view', 'popularTags', 'activeTag'));
     }
 
     /**
@@ -100,6 +119,8 @@ class PostController extends Controller
         $post->saves_count = $post->savesCount();
         $isFavorited = $user ? $user->hasFavorited($post) : false;
         $isPinned = $user ? $user->hasPinned($post) : false;
+
+        $post->load('tags');
 
         $comments = Comment::loadForPost($post, $user);
         $commentsCount = $post->comments()->count();

@@ -37,6 +37,7 @@ class GetPostDetailTool implements Tool
         return "**{$post->title}**\n\n" .
             "Tác giả: ".($post->user?->name ?? 'Admin')."\n" .
             "Danh mục: {$post->category}\n" .
+            "Tag: ".($post->tags->pluck('name')->implode(', ') ?: '(không có)')."\n" .
             "Ngày tạo: {$post->created_at->format('d/m/Y')}\n\n" .
             "Nội dung:\n{$post->content}";
     }

@@ -97,6 +97,27 @@ class Post extends Model
     }
 
     /**
+     * Tags (thẻ) attached to this post.
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class)->withTimestamps()->orderBy('tags.name');
+    }
+
+    /**
+     * Replace this post's tags with the given comma separated names (or
+     * array of names), creating tags that do not exist yet.
+     *
+     * @param  string|array<int, string>|null  $names
+     */
+    public function syncTags(string|array|null $names): void
+    {
+        $this->tags()->sync(Tag::resolveMany($names)->pluck('id')->all());
+
+        $this->unsetRelation('tags');
+    }
+
+    /**
      * Users who favorited this post.
      */
     public function favoritedBy(): BelongsToMany
@@ -257,6 +278,14 @@ class Post extends Model
     public function scopeMostInteracted(Builder $query): Builder
     {
         return $query->orderByRaw('(views_count + shares_count + favorites_count + comments_count) DESC');
+    }
+
+    /**
+     * Posts carrying the tag with the given slug.
+     */
+    public function scopeWithTag(Builder $query, string $slug): Builder
+    {
+        return $query->whereHas('tags', fn (Builder $q) => $q->where('tags.slug', $slug));
     }
 
     public function scopeSearch(Builder $query, string $search): Builder

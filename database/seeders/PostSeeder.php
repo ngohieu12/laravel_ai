@@ -90,8 +90,21 @@ class PostSeeder extends Seeder
             ],
         ];
 
+        // Demo tags per post slug (quản lý tại Admin → Tag).
+        $tags = [
+            'gioi-thieu-ve-laravel-13' => 'Laravel, PHP, Trí tuệ nhân tạo',
+            '10-meo-tang-hieu-suat-lam-viec-tu-xa' => 'Năng suất, Làm việc từ xa',
+            'huong-dan-hoc-lap-trinh-python' => 'Python, Lập trình, Người mới',
+            'xu-huong-cong-nghe-2026' => 'Trí tuệ nhân tạo, IoT',
+            'cach-xay-dung-thoi-quen-doc-sach' => 'Thói quen, Đọc sách',
+            'cong-cu-ai-mien-phi-tang-nang-suat' => 'Trí tuệ nhân tạo, Năng suất',
+            'che-do-dinh-duong-cho-dan-van-phong' => 'Sức khỏe, Dinh dưỡng',
+            'meo-chup-anh-dep-bang-dien-thoai' => 'Nhiếp ảnh, Điện thoại',
+        ];
+
         foreach ($posts as $post) {
             $model = Post::create($post);
+            $model->syncTags($tags[$model->slug] ?? null);
 
             // Every demo post gets one cover image, reused on the list & detail screens.
             $image = $this->makeCoverImage($model);

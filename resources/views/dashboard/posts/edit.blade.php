@@ -71,11 +71,13 @@
                 <input type="text" id="category" name="category" value="{{ old('category', $post->category) }}" required list="category-list"
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400">
                 <datalist id="category-list">
-                    @foreach(\App\Models\Category::names() as $catName)
+                    @foreach($categories as $catName)
                         <option value="{{ $catName }}">
                     @endforeach
                 </datalist>
             </div>
+
+            <x-posts.tag-input :value="old('tags', \App\Models\Tag::toInputString($post->tags))" :suggestions="$tagSuggestions" />
 
             <div class="flex items-center">
                 <input type="checkbox" id="is_published" name="is_published" value="1" {{ old('is_published', $post->is_published) ? 'checked' : '' }}

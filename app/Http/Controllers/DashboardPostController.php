@@ -6,6 +6,7 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\Tag;
 use App\Models\User;
 use App\Services\PostImage;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class DashboardPostController extends Controller
         $user = $request->user();
 
         $query = Post::query()
-            ->with('user')
+            ->with(['user', 'tags'])
             ->withCount([
                 'favoritedBy as favorites_count',
                 'pinnedBy as saves_count',
@@ -45,6 +46,10 @@ class DashboardPostController extends Controller
 
         if ($request->filled('category')) {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('tag')) {
+            $query->withTag($request->string('tag')->toString());
         }
 
         if ($request->filled('status')) {
@@ -78,8 +83,11 @@ class DashboardPostController extends Controller
         $authors = $user->isAdmin()
             ? User::query()->orderBy('name')->get(['id', 'name'])
             : collect();
+        $activeTag = $request->filled('tag')
+            ? Tag::query()->where('slug', $request->string('tag')->toString())->first()
+            : null;
 
-        return view('dashboard.posts.index', compact('posts', 'categories', 'authors', 'sort'));
+        return view('dashboard.posts.index', compact('posts', 'categories', 'authors', 'sort', 'activeTag'));
     }
 
     /**
@@ -88,8 +96,9 @@ class DashboardPostController extends Controller
     public function create()
     {
         $categories = Category::query()->ordered()->pluck('name');
+        $tagSuggestions = Tag::query()->ordered()->pluck('name');
 
-        return view('dashboard.posts.create', compact('categories'));
+        return view('dashboard.posts.create', compact('categories', 'tagSuggestions'));
     }
 
     /**
@@ -97,7 +106,7 @@ class DashboardPostController extends Controller
      */
     public function store(StorePostRequest $request, PostImage $images)
     {
-        $validated = $request->validated();
+        $validated = collect($request->validated())->except('tags')->all();
         $validated['is_published'] = $request->boolean('is_published');
         $validated['user_id'] = auth()->id();
 
@@ -108,6 +117,7 @@ class DashboardPostController extends Controller
         }
 
         $post = Post::create($validated);
+        $post->syncTags($request->input('tags'));
 
         return redirect()->route('dashboard.posts.index')->with('success', 'Bài viết đã được tạo thành công!');
     }
@@ -120,8 +130,10 @@ class DashboardPostController extends Controller
         $this->authorizeEdit($post);
 
         $categories = Category::query()->ordered()->pluck('name');
+        $tagSuggestions = Tag::query()->ordered()->pluck('name');
+        $post->load('tags');
 
-        return view('dashboard.posts.edit', compact('post', 'categories'));
+        return view('dashboard.posts.edit', compact('post', 'categories', 'tagSuggestions'));
     }
 
     /**
@@ -131,7 +143,7 @@ class DashboardPostController extends Controller
     {
         $this->authorizeEdit($post);
 
-        $validated = $request->validated();
+        $validated = collect($request->validated())->except('tags')->all();
         $validated['is_published'] = $request->boolean('is_published');
 
         $previousImage = $post->image;
@@ -145,6 +157,11 @@ class DashboardPostController extends Controller
         }
 
         $post->update($validated);
+
+        // Only touch tags when the form actually sent the field.
+        if ($request->has('tags')) {
+            $post->syncTags($request->input('tags'));
+        }
 
         // The old file is garbage once it has been replaced or removed.
         if ($post->image !== $previousImage) {
