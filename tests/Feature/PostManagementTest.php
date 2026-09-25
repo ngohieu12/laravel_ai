@@ -165,4 +165,21 @@ class PostManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Bài của người khác');
     }
+
+    #[Test]
+    public function test_the_management_search_box_filters_the_list(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Post::factory()->create(['title' => 'Học Laravel cơ bản']);
+        Post::factory()->create(['title' => 'Nấu ăn ngày Tết']);
+
+        $this->actingAs($admin)->get(route('dashboard.posts.index'))
+            ->assertOk()
+            ->assertSee('name="search"', false);
+
+        $this->actingAs($admin)->get(route('dashboard.posts.index', ['search' => 'Laravel']))
+            ->assertOk()
+            ->assertSee('Học Laravel cơ bản')
+            ->assertDontSee('Nấu ăn ngày Tết');
+    }
 }

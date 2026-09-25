@@ -10,7 +10,10 @@ use App\Models\User;
 use App\Services\PostEngagementTracker;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Random\Engine\Mt19937;
+use Random\Randomizer;
 
 /**
  * Generates realistic engagement history (views, shares, favorites, comments)
@@ -44,7 +47,7 @@ class EngagementSeeder extends Seeder
 
     public function run(): void
     {
-        $random = new \Random\Randomizer(new \Random\Engine\Mt19937(20260920));
+        $random = new Randomizer(new Mt19937(20260920));
 
         $users = User::query()->pluck('id')->all();
 
@@ -59,7 +62,7 @@ class EngagementSeeder extends Seeder
 
             Post::factory()
                 ->count(6 - $posts->count())
-                ->when($authorIds !== [], fn ($factory) => $factory->state(['user_id' => $random->getArray($authorIds, 1)[0]]))
+                ->when($authorIds !== [], fn ($factory) => $factory->state(['user_id' => $this->pick($random, $authorIds)]))
                 ->create();
 
             $posts = Post::query()->get(['id', 'user_id', 'category']);
@@ -97,7 +100,7 @@ class EngagementSeeder extends Seeder
 
                 for ($i = 0; $i < $views; $i++) {
                     $events[] = $this->event($random, $post->id, $users, PostEvent::TYPE_VIEW, $day, [
-                        'source' => $random->getArray(self::VIEW_SOURCES, 1)[0],
+                        'source' => $this->pick($random, self::VIEW_SOURCES),
                     ]);
                 }
 
@@ -109,12 +112,12 @@ class EngagementSeeder extends Seeder
 
                 for ($i = 0; $i < $shares; $i++) {
                     $events[] = $this->event($random, $post->id, $users, PostEvent::TYPE_SHARE, $day, [
-                        'platform' => $random->getArray(self::PLATFORM_WEIGHTS, 1)[0],
+                        'platform' => $this->pick($random, self::PLATFORM_WEIGHTS),
                     ]);
                 }
 
                 if ($random->getInt(1, 100) <= 55) {
-                    $userId = $random->getArray($users, 1)[0];
+                    $userId = $this->pick($random, $users);
                     $events[] = $this->event($random, $post->id, [$userId], PostEvent::TYPE_FAVORITE_ADD, $day);
 
                     $key = $userId.':'.$post->id;
@@ -131,7 +134,7 @@ class EngagementSeeder extends Seeder
                 }
 
                 if ($random->getInt(1, 100) <= 30) {
-                    $userId = $random->getArray($users, 1)[0];
+                    $userId = $this->pick($random, $users);
                     $timestamp = $this->timestamp($random, $day);
                     $events[] = $this->event($random, $post->id, [$userId], PostEvent::TYPE_COMMENT, $day);
 
@@ -139,7 +142,7 @@ class EngagementSeeder extends Seeder
                         'post_id' => $post->id,
                         'user_id' => $userId,
                         'parent_id' => null,
-                        'content' => $random->getArray(self::COMMENT_SAMPLES, 1)[0],
+                        'content' => $this->pick($random, self::COMMENT_SAMPLES),
                         'created_at' => $timestamp,
                         'updated_at' => $timestamp,
                     ];
@@ -179,9 +182,9 @@ class EngagementSeeder extends Seeder
      * @param  array<string, mixed>  $meta
      * @return array<string, mixed>
      */
-    private function event(\Random\Randomizer $random, int $postId, array $candidateUsers, string $type, CarbonImmutable $day, array $meta = []): array
+    private function event(Randomizer $random, int $postId, array $candidateUsers, string $type, CarbonImmutable $day, array $meta = []): array
     {
-        $userId = $candidateUsers === [] ? null : $random->getArray($candidateUsers, 1)[0];
+        $userId = $candidateUsers === [] ? null : $this->pick($random, $candidateUsers);
         $timestamp = $this->timestamp($random, $day);
 
         return [
@@ -197,7 +200,20 @@ class EngagementSeeder extends Seeder
         ];
     }
 
-    private function timestamp(\Random\Randomizer $random, CarbonImmutable $day): CarbonImmutable
+    /**
+     * Pick one random element of a non-empty list (deterministic for the seeded engine).
+     *
+     * @template T
+     *
+     * @param  array<array-key, T>  $items
+     * @return T
+     */
+    private function pick(Randomizer $random, array $items): mixed
+    {
+        return $items[$random->pickArrayKeys($items, 1)[0]];
+    }
+
+    private function timestamp(Randomizer $random, CarbonImmutable $day): CarbonImmutable
     {
         return $day->addHours($random->getInt(6, 22))->addMinutes($random->getInt(0, 59));
     }
@@ -205,7 +221,7 @@ class EngagementSeeder extends Seeder
     /**
      * Bulk insert rows without hydrating models.
      *
-     * @param  Builder<\Illuminate\Database\Eloquent\Model>  $query
+     * @param  Builder<Model>  $query
      * @param  array<int, array<string, mixed>>  $rows
      */
     private function insertInChunks(Builder $query, array $rows): void
