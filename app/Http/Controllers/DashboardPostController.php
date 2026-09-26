@@ -108,6 +108,7 @@ class DashboardPostController extends Controller
     {
         $validated = collect($request->validated())->except('tags')->all();
         $validated['is_published'] = $request->boolean('is_published');
+        $validated['is_long_form'] = $request->boolean('is_long_form');
         $validated['user_id'] = auth()->id();
         $validated = $this->normalizeContentAttributes($validated);
 
@@ -146,6 +147,7 @@ class DashboardPostController extends Controller
 
         $validated = collect($request->validated())->except('tags')->all();
         $validated['is_published'] = $request->boolean('is_published');
+        $validated['is_long_form'] = $request->boolean('is_long_form');
         $validated = $this->normalizeContentAttributes($validated);
 
         $previousImage = $post->image;

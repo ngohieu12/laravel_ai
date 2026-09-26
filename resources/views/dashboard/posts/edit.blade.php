@@ -131,6 +131,12 @@
                         <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+                <label class="flex items-start gap-2.5 pt-1">
+                    <input type="checkbox" id="is_long_form" name="is_long_form" value="1" @checked(old('is_long_form', $post->is_long_form))
+                        class="w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
+                    <span class="text-sm text-gray-700">🕰 Đánh dấu là <strong>bài dài kỳ</strong></span>
+                    <span class="block text-xs text-gray-500">Cờ thủ công: phần này được ghim nổi bật trong trang chuỗi bài viết.</span>
+                </label>
             </div>
 
             <div class="flex items-center">

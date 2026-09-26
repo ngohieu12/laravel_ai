@@ -58,6 +58,10 @@
                            class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('chatbot.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
                             🤖 Chatbot AI
                         </a>
+                        <a href="{{ route('series.index') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('series.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">
+                            📚 Chuỗi bài viết
+                        </a>
                         @auth
                         <a href="{{ route('favorites.index') }}"
                            class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('favorites.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-600 hover:bg-gray-100 hover:text-slate-700' }}">

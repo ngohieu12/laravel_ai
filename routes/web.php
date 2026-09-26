@@ -13,6 +13,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PinController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PublicSeriesController;
 use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::get('/posts', [PostController::class, 'index'])->name('posts.index');
 Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
 Route::post('/posts/{post}/shares', [EngagementController::class, 'trackShare'])->name('posts.shares.track');
+
+// Chuỗi bài viết dài kỳ (ordered long-form series): public list + detail
+Route::get('/series', [PublicSeriesController::class, 'index'])->name('series.index');
+Route::get('/series/{series}', [PublicSeriesController::class, 'show'])
+    ->where('series', '[A-Za-z0-9\-]+')
+    ->name('series.show');
 
 // ---------------------------------------------------------------------------
 // Logged-in readers: favorite, comment, pin (ghim bài)

@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Services\PostImage;
-use App\Support\VietnameseText;
 use App\Support\VideoUrl;
+use App\Support\VietnameseText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -43,6 +43,7 @@ class Post extends Model
         'video_url',
         'series_title',
         'series_part',
+        'is_long_form',
         'image',
         'image_alt',
         'category',
@@ -54,6 +55,7 @@ class Post extends Model
         'is_published' => 'boolean',
         'user_id' => 'integer',
         'series_part' => 'integer',
+        'is_long_form' => 'boolean',
         'views_count' => 'integer',
         'shares_count' => 'integer',
         'favorites_count' => 'integer',
@@ -161,7 +163,7 @@ class Post extends Model
     public function seriesParts(bool $includeDrafts = false): Collection
     {
         if (! $this->isSeries()) {
-            return new Collection();
+            return new Collection;
         }
 
         return $this->seriesPartsQuery($includeDrafts)->get();
@@ -313,6 +315,56 @@ class Post extends Model
                 $post->slug = $post->generateSlug($post->title, $post->id);
             }
         });
+
+        // The public series slug is derived, never entered by hand, so it always
+        // follows the series title. Every part of a series shares one slug.
+        static::saving(function (Post $post) {
+            if ($post->isDirty('series_title')) {
+                $post->series_slug = $post->generateSeriesSlug((string) $post->series_title);
+            }
+        });
+    }
+
+    /**
+     * Estimated reading time in minutes at 200 words per minute.
+     *
+     * Words are split on whitespace with the /u modifier so Vietnamese text is
+     * counted correctly instead of being measured in bytes.
+     */
+    public function readingMinutes(): int
+    {
+        $words = preg_split('/\s+/u', trim(strip_tags((string) $this->content)), -1, PREG_SPLIT_NO_EMPTY);
+
+        return max(1, (int) ceil(count($words ?: []) / 200));
+    }
+
+    /**
+     * Slug identifying a series on the public screens.
+     *
+     * Deterministic for a given title, so every part of the same series resolves
+     * to the same URL. Two different titles that fold onto the same ASCII form
+     * are disambiguated with a counter.
+     */
+    private function generateSeriesSlug(string $title): ?string
+    {
+        $title = trim($title);
+
+        if ($title === '') {
+            return null;
+        }
+
+        $base = Str::slug(VietnameseText::toAscii($title)) ?: 'chuoi-bai-viet';
+        $slug = $base;
+        $suffix = 1;
+
+        while (static::where('series_slug', $slug)
+            ->when($this->exists, fn (Builder $query) => $query->whereKeyNot($this->getKey()))
+            ->where('series_title', '!=', $title)
+            ->exists()) {
+            $slug = $base.'-'.(++$suffix);
+        }
+
+        return $slug;
     }
 
     private function generateSlug(string $title, ?int $excludeId = null): string
@@ -336,6 +388,16 @@ class Post extends Model
         }
 
         return $slug;
+    }
+
+    /**
+     * Scope to the posts that belong to a series, in reading order.
+     */
+    public function scopeInSeries(Builder $query, string $slug): Builder
+    {
+        return $query->where('series_slug', $slug)
+            ->whereNotNull('series_part')
+            ->orderBy('series_part');
     }
 
     public function scopePublished(Builder $query): Builder

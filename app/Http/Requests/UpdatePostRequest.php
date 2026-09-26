@@ -30,6 +30,7 @@ class UpdatePostRequest extends FormRequest
                 $this->embeddableVideoRule(),
             ],
             'series_title' => ['nullable', 'string', 'max:150'],
+            'is_long_form' => ['nullable', 'boolean'],
             'series_part' => ['nullable', 'integer', 'min:1', 'max:100000', 'required_with:series_title', $this->uniqueSeriesPartRule()],
             'category' => ['required', 'string', 'max:100'],
             'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
