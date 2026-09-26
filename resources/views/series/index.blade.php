@@ -51,7 +51,7 @@
                     </div>
 
                     <h2 class="mt-4 text-lg font-bold text-stone-900 leading-snug">
-                        <a href="{{ route('series.show', $item['slug']) }}" class="hover:text-amber-800 transition">
+                        <a href="{{ route('series.show', $item['id']) }}" class="hover:text-amber-800 transition">
                             {{ $item['title'] }}
                         </a>
                     </h2>
@@ -62,7 +62,7 @@
 
                     <div class="mt-4 pt-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
                         <span>⏱ {{ $item['minutes'] }} phút đọc</span>
-                        <a href="{{ route('series.show', $item['slug']) }}" class="font-semibold text-stone-800 hover:text-amber-800 transition">
+                        <a href="{{ route('series.show', $item['id']) }}" class="font-semibold text-stone-800 hover:text-amber-800 transition">
                             Bắt đầu đọc →
                         </a>
                     </div>

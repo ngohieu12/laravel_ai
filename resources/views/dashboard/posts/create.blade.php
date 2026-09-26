@@ -112,12 +112,21 @@
             <!-- Bài viết dài kỳ (chuỗi) -->
             <div class="border border-indigo-100 bg-indigo-50/50 rounded-xl p-5 space-y-3">
                 <div>
-                    <label for="series_title" class="block text-sm font-medium text-gray-700 mb-1">📖 Chuỗi bài viết dài kỳ <span class="text-xs font-normal text-gray-400">(tùy chọn)</span></label>
-                    <input type="text" id="series_title" name="series_title" value="{{ old('series_title') }}" maxlength="150"
-                        class="w-full border-gray-300 rounded-lg px-4 py-2.5 border focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
-                        placeholder="VD: Học Laravel từ đầu">
-                    <p class="text-xs text-gray-500 mt-1">Dùng cùng một tên chuỗi ở nhiều bài viết để gom thành bộ — độc giả sẽ thấy danh sách các phần và nút chuyển phần trước / sau.</p>
-                    @error('series_title')
+                    <label for="series_id" class="block text-sm font-medium text-gray-700 mb-1">📖 Chuỗi bài viết dài kỳ <span class="text-xs font-normal text-gray-400">(tùy chọn)</span></label>
+                    <select id="series_id" name="series_id"
+                        class="w-full border-gray-300 rounded-lg px-4 py-2.5 border focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                        <option value="">— Không thuộc chuỗi nào —</option>
+                        @foreach($series as $item)
+                            <option value="{{ $item->id }}" @selected((int) old('series_id') === $item->id)>
+                                {{ $item->title }} ({{ $item->posts_count }} phần)
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Chọn chuỗi có sẵn để gom bài này vào đúng bộ theo ID. Chưa có chuỗi?
+                        <a href="{{ route('dashboard.series.index') }}" class="text-indigo-600 underline">Tạo chuỗi mới</a>.
+                    </p>
+                    @error('series_id')
                         <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>

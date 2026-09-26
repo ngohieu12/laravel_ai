@@ -74,8 +74,12 @@
                         @if(auth()->user()->hasRole('admin', 'creator'))
                         <span class="w-px h-5 bg-gray-200 mx-2"></span>
                         <a href="{{ route('dashboard.posts.index') }}"
-                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('dashboard.*') ? 'bg-slate-700 text-white' : 'text-gray-600 hover:bg-slate-100 hover:text-slate-700' }}">
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('dashboard.posts.*', 'dashboard.analytics.*') ? 'bg-slate-700 text-white' : 'text-gray-600 hover:bg-slate-100 hover:text-slate-700' }}">
                             🛠️ Quản trị bài viết
+                        </a>
+                        <a href="{{ route('dashboard.series.index') }}"
+                           class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('dashboard.series.*') ? 'bg-slate-700 text-white' : 'text-gray-600 hover:bg-slate-100 hover:text-slate-700' }}">
+                            📚 Chuỗi
                         </a>
                         @endif
                         @endauth

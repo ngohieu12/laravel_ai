@@ -41,7 +41,7 @@ class Post extends Model
         'content',
         'content_type',
         'video_url',
-        'series_title',
+        'series_id',
         'series_part',
         'is_long_form',
         'image',
@@ -54,6 +54,7 @@ class Post extends Model
     protected $casts = [
         'is_published' => 'boolean',
         'user_id' => 'integer',
+        'series_id' => 'integer',
         'series_part' => 'integer',
         'is_long_form' => 'boolean',
         'views_count' => 'integer',
@@ -126,9 +127,19 @@ class Post extends Model
     /**
      * Whether this post belongs to a long-running series (chuỗi bài dài kỳ).
      */
+    /**
+     * The series this post belongs to, if any.
+     *
+     * @return BelongsTo<Series, $this>
+     */
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(Series::class);
+    }
+
     public function isSeries(): bool
     {
-        return filled($this->series_title);
+        return $this->series_id !== null;
     }
 
     /**
@@ -149,7 +160,8 @@ class Post extends Model
     public function seriesPartsQuery(bool $includeDrafts = false): Builder
     {
         return static::query()
-            ->where('series_title', $this->series_title)
+            ->where('series_id', $this->series_id)
+            ->whereNotNull('series_part')
             ->when(! $includeDrafts, fn (Builder $query) => $query->published())
             ->orderBy('series_part')
             ->orderBy('id');
@@ -315,14 +327,6 @@ class Post extends Model
                 $post->slug = $post->generateSlug($post->title, $post->id);
             }
         });
-
-        // The public series slug is derived, never entered by hand, so it always
-        // follows the series title. Every part of a series shares one slug.
-        static::saving(function (Post $post) {
-            if ($post->isDirty('series_title')) {
-                $post->series_slug = $post->generateSeriesSlug((string) $post->series_title);
-            }
-        });
     }
 
     /**
@@ -336,35 +340,6 @@ class Post extends Model
         $words = preg_split('/\s+/u', trim(strip_tags((string) $this->content)), -1, PREG_SPLIT_NO_EMPTY);
 
         return max(1, (int) ceil(count($words ?: []) / 200));
-    }
-
-    /**
-     * Slug identifying a series on the public screens.
-     *
-     * Deterministic for a given title, so every part of the same series resolves
-     * to the same URL. Two different titles that fold onto the same ASCII form
-     * are disambiguated with a counter.
-     */
-    private function generateSeriesSlug(string $title): ?string
-    {
-        $title = trim($title);
-
-        if ($title === '') {
-            return null;
-        }
-
-        $base = Str::slug(VietnameseText::toAscii($title)) ?: 'chuoi-bai-viet';
-        $slug = $base;
-        $suffix = 1;
-
-        while (static::where('series_slug', $slug)
-            ->when($this->exists, fn (Builder $query) => $query->whereKeyNot($this->getKey()))
-            ->where('series_title', '!=', $title)
-            ->exists()) {
-            $slug = $base.'-'.(++$suffix);
-        }
-
-        return $slug;
     }
 
     private function generateSlug(string $title, ?int $excludeId = null): string
@@ -388,16 +363,6 @@ class Post extends Model
         }
 
         return $slug;
-    }
-
-    /**
-     * Scope to the posts that belong to a series, in reading order.
-     */
-    public function scopeInSeries(Builder $query, string $slug): Builder
-    {
-        return $query->where('series_slug', $slug)
-            ->whereNotNull('series_part')
-            ->orderBy('series_part');
     }
 
     public function scopePublished(Builder $query): Builder

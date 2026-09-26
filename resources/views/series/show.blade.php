@@ -1,7 +1,7 @@
 @extends('layouts.reader')
 
-@section('title', $seriesTitle)
-@section('description', 'Đọc chuỗi bài viết "'.$seriesTitle.'" theo thứ tự từ phần đầu đến phần cuối.')
+@section('title', $series->title)
+@section('description', 'Đọc chuỗi bài viết "'.$series->title.'" theo thứ tự từ phần đầu đến phần cuối.')
 
 @section('content')
 <div class="max-w-5xl mx-auto px-4 py-10">
@@ -21,8 +21,12 @@
             </span>
         @endif
         <h1 class="mt-3 text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight leading-tight">
-            {{ $seriesTitle }}
+            {{ $series->title }}
         </h1>
+
+        @if($series->description)
+            <p class="mt-3 text-lg text-stone-600 leading-relaxed max-w-3xl">{{ $series->description }}</p>
+        @endif
 
         <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-stone-500">
             <span>📖 {{ $parts->count() }} phần</span>

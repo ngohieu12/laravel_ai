@@ -8,6 +8,7 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CreatorAnalyticsController;
 use App\Http\Controllers\DashboardPostController;
+use App\Http\Controllers\DashboardSeriesController;
 use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
@@ -38,9 +39,7 @@ Route::post('/posts/{post}/shares', [EngagementController::class, 'trackShare'])
 
 // Chuỗi bài viết dài kỳ (ordered long-form series): public list + detail
 Route::get('/series', [PublicSeriesController::class, 'index'])->name('series.index');
-Route::get('/series/{series}', [PublicSeriesController::class, 'show'])
-    ->where('series', '[A-Za-z0-9\-]+')
-    ->name('series.show');
+Route::get('/series/{series}', [PublicSeriesController::class, 'show'])->name('series.show');
 
 // ---------------------------------------------------------------------------
 // Logged-in readers: favorite, comment, pin (ghim bài)
@@ -75,6 +74,12 @@ Route::middleware(['auth', 'role:admin,creator'])->prefix('dashboard')->name('da
 
     Route::get('/analytics', [CreatorAnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/analytics/posts/{post}', [CreatorAnalyticsController::class, 'show'])->name('analytics.posts.show');
+
+    // Series (chuỗi bài viết dài kỳ) are referenced by id, so they are managed here.
+    Route::get('/series', [DashboardSeriesController::class, 'index'])->name('series.index');
+    Route::post('/series', [DashboardSeriesController::class, 'store'])->name('series.store');
+    Route::put('/series/{series}', [DashboardSeriesController::class, 'update'])->name('series.update');
+    Route::delete('/series/{series}', [DashboardSeriesController::class, 'destroy'])->name('series.destroy');
 });
 
 // ---------------------------------------------------------------------------

@@ -6,11 +6,13 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\Series;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\PostImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 
 /**
  * Backend (dashboard) post management for admins and creators.
@@ -97,8 +99,9 @@ class DashboardPostController extends Controller
     {
         $categories = Category::query()->ordered()->pluck('name');
         $tagSuggestions = Tag::query()->ordered()->pluck('name');
+        $series = $this->seriesOptions();
 
-        return view('dashboard.posts.create', compact('categories', 'tagSuggestions'));
+        return view('dashboard.posts.create', compact('categories', 'tagSuggestions', 'series'));
     }
 
     /**
@@ -133,9 +136,20 @@ class DashboardPostController extends Controller
 
         $categories = Category::query()->ordered()->pluck('name');
         $tagSuggestions = Tag::query()->ordered()->pluck('name');
+        $series = $this->seriesOptions();
         $post->load('tags');
 
-        return view('dashboard.posts.edit', compact('post', 'categories', 'tagSuggestions'));
+        return view('dashboard.posts.edit', compact('post', 'categories', 'tagSuggestions', 'series'));
+    }
+
+    /**
+     * Series offered by the post form, newest first.
+     *
+     * @return Collection<int, Series>
+     */
+    private function seriesOptions()
+    {
+        return Series::query()->withCount('posts')->orderByDesc('updated_at')->get();
     }
 
     /**
@@ -218,11 +232,11 @@ class DashboardPostController extends Controller
         // Video posts may skip the written body.
         $validated['content'] = (string) ($validated['content'] ?? '');
 
-        $validated['series_title'] = isset($validated['series_title']) && trim((string) $validated['series_title']) !== ''
-            ? trim((string) $validated['series_title'])
+        $validated['series_id'] = isset($validated['series_id']) && (int) $validated['series_id'] > 0
+            ? (int) $validated['series_id']
             : null;
 
-        $validated['series_part'] = $validated['series_title'] !== null && isset($validated['series_part'])
+        $validated['series_part'] = $validated['series_id'] !== null && isset($validated['series_part'])
             ? (int) $validated['series_part']
             : null;
 

@@ -84,7 +84,7 @@
             @if($post->isSeries() && $seriesParts->isNotEmpty())
                 <!-- Series: bài viết dài kỳ -->
                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-6">
-                    <p class="text-sm font-semibold text-indigo-900 mb-3">📖 Chuỗi bài viết dài kỳ: {{ $post->series_title }}</p>
+                    <p class="text-sm font-semibold text-indigo-900 mb-3">📖 Chuỗi bài viết dài kỳ: {{ $post->series?->title }}</p>
                     <ol class="space-y-2">
                         @foreach($seriesParts as $part)
                             <li class="flex items-baseline gap-2 text-sm">

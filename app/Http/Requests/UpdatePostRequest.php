@@ -3,10 +3,12 @@
 namespace App\Http\Requests;
 
 use App\Models\Post;
+use App\Models\Series;
 use App\Models\Tag;
 use App\Support\VideoUrl;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePostRequest extends FormRequest
 {
@@ -29,9 +31,9 @@ class UpdatePostRequest extends FormRequest
                 'required_if:content_type,'.Post::CONTENT_TYPE_VIDEO,
                 $this->embeddableVideoRule(),
             ],
-            'series_title' => ['nullable', 'string', 'max:150'],
+            'series_id' => ['nullable', 'integer', Rule::exists('series', 'id')],
             'is_long_form' => ['nullable', 'boolean'],
-            'series_part' => ['nullable', 'integer', 'min:1', 'max:100000', 'required_with:series_title', $this->uniqueSeriesPartRule()],
+            'series_part' => ['nullable', 'integer', 'min:1', 'max:100000', 'required_with:series_id', $this->uniqueSeriesPartRule()],
             'category' => ['required', 'string', 'max:100'],
             'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'image_alt' => ['nullable', 'string', 'max:255'],
@@ -63,15 +65,15 @@ class UpdatePostRequest extends FormRequest
     private function uniqueSeriesPartRule(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
-            $seriesTitle = trim((string) $this->input('series_title'));
+            $seriesId = (int) $this->input('series_id');
             $part = (int) $value;
 
-            if ($seriesTitle === '' || $part < 1) {
+            if ($seriesId < 1 || $part < 1) {
                 return;
             }
 
             $query = Post::query()
-                ->where('series_title', $seriesTitle)
+                ->where('series_id', $seriesId)
                 ->where('series_part', $part);
 
             $current = $this->route('post');
@@ -81,6 +83,8 @@ class UpdatePostRequest extends FormRequest
             }
 
             if ($query->exists()) {
+                $seriesTitle = Series::query()->whereKey($seriesId)->value('title');
+
                 $fail("Phần {$part} đã tồn tại trong chuỗi bài viết \"{$seriesTitle}\".");
             }
         };
@@ -129,6 +133,7 @@ class UpdatePostRequest extends FormRequest
             'video_url.required_if' => 'Bài viết video cần đường dẫn video (YouTube hoặc Vimeo).',
             'video_url.max' => 'Đường dẫn video quá dài.',
             'series_title.max' => 'Tên chuỗi bài viết tối đa 150 ký tự.',
+            'series_id.exists' => 'Chuỗi bài viết không tồn tại.',
             'series_part.required_with' => 'Chuỗi bài viết dài kỳ cần số thứ tự của phần.',
             'series_part.integer' => 'Số thứ tự phần phải là một số.',
             'series_part.min' => 'Số thứ tự phần phải lớn hơn 0.',

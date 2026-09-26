@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Post;
+use App\Models\Series;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -30,7 +31,7 @@ class PostFactory extends Factory
             'content' => '<p>'.fake()->paragraph(6).'</p><p>'.fake()->paragraph(4).'</p>',
             'content_type' => Post::CONTENT_TYPE_TEXT,
             'video_url' => null,
-            'series_title' => null,
+            'series_id' => null,
             'series_part' => null,
             'image' => null,
             'image_alt' => null,
@@ -86,12 +87,12 @@ class PostFactory extends Factory
     }
 
     /**
-     * Part of a long-running series ("bài viết dài kỳ").
+     * Part of a long-running series ("chuỗi bài viết dài kỳ").
      */
-    public function inSeries(string $seriesTitle, int $part): static
+    public function inSeries(Series $series, int $part): static
     {
         return $this->state(fn (array $attributes) => [
-            'series_title' => $seriesTitle,
+            'series_id' => $series->id,
             'series_part' => $part,
         ]);
     }

@@ -71,7 +71,7 @@
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
                             @endif
                             @if($post->isSeries())
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="{{ $post->series_title }}">📖 Phần {{ $post->series_part }}</span>
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="{{ $post->series?->title }}">📖 Phần {{ $post->series_part }}</span>
                             @endif
                         </div>
                         <a href="{{ route('posts.show', $post) }}" class="text-lg font-semibold text-gray-800 hover:text-slate-600">{{ $post->title }}</a>
