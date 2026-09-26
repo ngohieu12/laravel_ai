@@ -44,6 +44,16 @@
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-700">
                     {{ ucfirst($post->category) }}
                 </span>
+                @if($post->isVideo())
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        🎥 Video
+                    </span>
+                @endif
+                @if($post->isSeries())
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800" title="Thuộc chuỗi bài viết dài kỳ">
+                        📖 Dài kỳ — Phần {{ $post->series_part }}
+                    </span>
+                @endif
             </div>
 
             <!-- Title -->
@@ -71,10 +81,62 @@
                 <p class="text-slate-700 font-medium">{{ $post->summary }}</p>
             </div>
 
-            <!-- Content -->
-            <div class="prose text-gray-700">
-                {!! \App\Support\HtmlSanitizer::sanitize($post->content) !!}
-            </div>
+            @if($post->isSeries() && $seriesParts->isNotEmpty())
+                <!-- Series: bài viết dài kỳ -->
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 mb-6">
+                    <p class="text-sm font-semibold text-indigo-900 mb-3">📖 Chuỗi bài viết dài kỳ: {{ $post->series_title }}</p>
+                    <ol class="space-y-2">
+                        @foreach($seriesParts as $part)
+                            <li class="flex items-baseline gap-2 text-sm">
+                                <span class="shrink-0 w-16 font-semibold text-indigo-700">Phần {{ $part->series_part }}</span>
+                                @if($part->is($post))
+                                    <span class="font-semibold text-indigo-900">{{ $part->title }} <span class="text-xs font-normal text-indigo-500">(đang đọc)</span></span>
+                                @elseif($part->is_published)
+                                    <a href="{{ route('posts.show', $part) }}" class="text-indigo-700 hover:underline">{{ $part->title }}</a>
+                                @else
+                                    <span class="text-gray-400" title="Bản nháp">{{ $part->title }} <span class="text-xs">(nháp)</span></span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ol>
+                    @if($previousPart || $nextPart)
+                        <div class="flex justify-between gap-3 mt-4 pt-3 border-t border-indigo-100">
+                            <div>
+                                @if($previousPart)
+                                    <a href="{{ route('posts.show', $previousPart) }}" class="inline-flex items-center text-sm font-medium text-indigo-700 hover:text-indigo-900">
+                                        ← Phần {{ $previousPart->series_part }}
+                                    </a>
+                                @endif
+                            </div>
+                            <div>
+                                @if($nextPart)
+                                    <a href="{{ route('posts.show', $nextPart) }}" class="inline-flex items-center text-sm font-medium text-indigo-700 hover:text-indigo-900">
+                                        Phần {{ $nextPart->series_part }} →
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            @if($post->isVideo() && $post->videoEmbedUrl())
+                <!-- Video player -->
+                <div class="relative w-full mb-6 bg-black aspect-video rounded-lg overflow-hidden">
+                    <iframe src="{{ $post->videoEmbedUrl() }}" title="{{ $post->title }}"
+                            class="absolute inset-0 w-full h-full"
+                            loading="lazy" allowfullscreen
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+                </div>
+            @endif
+
+            @if(! $post->isVideo() || trim((string) $post->content) !== '')
+                <!-- Content -->
+                <div class="prose text-gray-700">
+                    {!! \App\Support\HtmlSanitizer::sanitize($post->content) !!}
+                </div>
+            @endif
 
             @if($post->tags->isNotEmpty())
                 <div class="mt-8 pt-6 border-t flex flex-wrap items-center gap-2">

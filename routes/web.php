@@ -10,6 +10,7 @@ use App\Http\Controllers\CreatorAnalyticsController;
 use App\Http\Controllers\DashboardPostController;
 use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PinController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\TagController;
@@ -47,6 +48,11 @@ Route::middleware('auth')->group(function () {
     // Comments (nested replies + favorites)
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('posts.comments.store');
     Route::post('/posts/{post}/comments/{comment}/favorite', [CommentController::class, 'toggleFavorite'])->name('posts.comments.favorite');
+
+    // In-app notifications (chuông 🔔): tương tác trên bài viết / bình luận
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
 });
 
 // ---------------------------------------------------------------------------

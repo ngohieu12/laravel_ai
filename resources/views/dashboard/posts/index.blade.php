@@ -67,6 +67,12 @@
                                 {{ $post->is_published ? 'Đã xuất bản' : 'Bản nháp' }}
                             </span>
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">{{ ucfirst($post->category) }}</span>
+                            @if($post->isVideo())
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
+                            @endif
+                            @if($post->isSeries())
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="{{ $post->series_title }}">📖 Phần {{ $post->series_part }}</span>
+                            @endif
                         </div>
                         <a href="{{ route('posts.show', $post) }}" class="text-lg font-semibold text-gray-800 hover:text-slate-600">{{ $post->title }}</a>
                         <p class="text-gray-500 text-sm line-clamp-1">{{ $post->summary }}</p>

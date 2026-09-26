@@ -153,10 +153,16 @@
                     <article class="bg-white rounded-xl shadow-sm border hover:shadow-md transition flex flex-col overflow-hidden">
                         <x-posts.thumbnail :post="$post" size="lg" />
                         <div class="p-5 flex flex-col flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
                                     {{ ucfirst($post->category) }}
                                 </span>
+                                @if($post->isVideo())
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
+                                @endif
+                                @if($post->isSeries())
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="Chuỗi: {{ $post->series_title }}">📖 Phần {{ $post->series_part }}</span>
+                                @endif
                             </div>
                             <a href="{{ route('posts.show', $post) }}" class="text-lg font-semibold text-gray-800 hover:text-slate-600 transition line-clamp-2">
                                 {{ $post->title }}
@@ -198,10 +204,16 @@
 
                                 <div class="flex flex-1 flex-col sm:flex-row justify-between items-start gap-3">
                                     <div class="flex-1">
-                                        <div class="flex items-center space-x-2 mb-2">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
                                                 {{ ucfirst($post->category) }}
                                             </span>
+                                            @if($post->isVideo())
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
+                                            @endif
+                                            @if($post->isSeries())
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="Chuỗi: {{ $post->series_title }}">📖 Phần {{ $post->series_part }}</span>
+                                            @endif
                                         </div>
                                         <a href="{{ route('posts.show', $post) }}" class="text-xl font-semibold text-gray-800 hover:text-slate-600 transition">
                                             {{ $post->title }}

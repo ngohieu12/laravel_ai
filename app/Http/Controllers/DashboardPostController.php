@@ -109,6 +109,7 @@ class DashboardPostController extends Controller
         $validated = collect($request->validated())->except('tags')->all();
         $validated['is_published'] = $request->boolean('is_published');
         $validated['user_id'] = auth()->id();
+        $validated = $this->normalizeContentAttributes($validated);
 
         $image = $request->file('image');
 
@@ -145,6 +146,7 @@ class DashboardPostController extends Controller
 
         $validated = collect($request->validated())->except('tags')->all();
         $validated['is_published'] = $request->boolean('is_published');
+        $validated = $this->normalizeContentAttributes($validated);
 
         $previousImage = $post->image;
         $image = $request->file('image');
@@ -191,5 +193,37 @@ class DashboardPostController extends Controller
     private function authorizeEdit(Post $post): void
     {
         abort_unless($post->isManagedBy(auth()->user()), 403, 'Bạn chỉ có thể quản lý bài viết của mình.');
+    }
+
+    /**
+     * Normalize content type / video / series fields coming from the form, so
+     * text posts never keep a stale video URL and non-series posts never keep
+     * a stale part number.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function normalizeContentAttributes(array $validated): array
+    {
+        $validated['content_type'] = ($validated['content_type'] ?? Post::CONTENT_TYPE_TEXT) === Post::CONTENT_TYPE_VIDEO
+            ? Post::CONTENT_TYPE_VIDEO
+            : Post::CONTENT_TYPE_TEXT;
+
+        $validated['video_url'] = $validated['content_type'] === Post::CONTENT_TYPE_VIDEO
+            ? trim((string) ($validated['video_url'] ?? ''))
+            : null;
+
+        // Video posts may skip the written body.
+        $validated['content'] = (string) ($validated['content'] ?? '');
+
+        $validated['series_title'] = isset($validated['series_title']) && trim((string) $validated['series_title']) !== ''
+            ? trim((string) $validated['series_title'])
+            : null;
+
+        $validated['series_part'] = $validated['series_title'] !== null && isset($validated['series_part'])
+            ? (int) $validated['series_part']
+            : null;
+
+        return $validated;
     }
 }

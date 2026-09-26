@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Notifications\PostFavorited;
 use App\Services\PostEngagementTracker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,14 @@ class FavoriteController extends Controller
         $user = $request->user();
         $nowFavorited = $user->toggleFavorite($post);
         $engagement->trackFavorite($request, $post, $nowFavorited, $user);
+
+        if ($nowFavorited) {
+            $author = $post->user;
+
+            if ($author !== null && ! $author->is($user)) {
+                $author->notify(new PostFavorited($user, $post));
+            }
+        }
         $status = $nowFavorited ? 'added' : 'removed';
         $message = $nowFavorited
             ? 'Đã thêm bài viết vào danh sách yêu thích.'

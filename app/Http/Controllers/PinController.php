@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Notifications\PostPinned;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,14 @@ class PinController extends Controller
         $user = $request->user();
         $nowPinned = $user->togglePin($post);
         $status = $nowPinned ? 'added' : 'removed';
+
+        if ($nowPinned) {
+            $author = $post->user;
+
+            if ($author !== null && ! $author->is($user)) {
+                $author->notify(new PostPinned($user, $post));
+            }
+        }
         $message = $nowPinned
             ? 'Đã ghim bài viết để đọc sau.'
             : 'Đã bỏ ghim bài viết.';
