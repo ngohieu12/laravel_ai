@@ -34,7 +34,7 @@ class CommentController extends Controller
 
         return redirect()
             ->route('posts.show', ['post' => $post])
-            ->withFragment('comment-' . $comment->id)
+            ->withFragment('comment-'.$comment->id)
             ->with('success', 'Bình luận của bạn đã được đăng.');
     }
 
@@ -77,7 +77,8 @@ class CommentController extends Controller
             $parentAuthor = $parent->user;
 
             if ($parentAuthor !== null && ! $parentAuthor->is($actor)) {
-                $parentAuthor->notify(new CommentReplied($actor, $post, $comment));
+                // The payload points at the comment being replied to, not the reply itself.
+                $parentAuthor->notify(new CommentReplied($actor, $post, $parent));
             }
 
             return;

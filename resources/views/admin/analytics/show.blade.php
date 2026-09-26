@@ -45,7 +45,6 @@
     ];
 @endphp
 
-@section('content')
 <div class="space-y-6">
     <a href="{{ route('admin.analytics.index', ['period' => $period]) }}" class="inline-flex items-center text-gray-600 hover:text-slate-700 transition text-sm">
         ← Quay lại bảng phân tích
