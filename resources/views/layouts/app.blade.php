@@ -87,6 +87,13 @@
                             Bài viết mới
                         </a>
                         @endif
+                        @php $unreadNotifications = auth()->user()->unreadNotifications()->count(); @endphp
+                        <a href="{{ route('notifications.index') }}" class="relative p-2 rounded-lg transition {{ request()->routeIs('notifications.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-500 hover:bg-gray-100 hover:text-slate-700' }}" title="Thông báo">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            @if($unreadNotifications > 0)
+                                <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{{ $unreadNotifications > 99 ? '99+' : $unreadNotifications }}</span>
+                            @endif
+                        </a>
                         <div class="flex items-center space-x-3 pl-3 border-l">
                             <div class="text-right hidden sm:block">
                                 <div class="text-sm font-medium text-gray-700">{{ auth()->user()->name }}</div>
@@ -139,6 +146,14 @@
                 <a href="{{ route('pins.index') }}"
                    class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('pins.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
                     📌 Đã ghim
+                </a>
+                @php $unreadNotificationsMobile = auth()->user()->unreadNotifications()->count(); @endphp
+                <a href="{{ route('notifications.index') }}"
+                   class="flex items-center justify-between px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('notifications.*') ? 'bg-slate-100 text-slate-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                    <span>🔔 Thông báo</span>
+                    @if($unreadNotificationsMobile > 0)
+                        <span class="min-w-[20px] px-1.5 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold text-center">{{ $unreadNotificationsMobile > 99 ? '99+' : $unreadNotificationsMobile }}</span>
+                    @endif
                 </a>
                 @if(auth()->user()->hasRole('admin', 'creator'))
                 <a href="{{ route('dashboard.posts.index') }}"

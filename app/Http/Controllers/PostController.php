@@ -126,6 +126,32 @@ class PostController extends Controller
         $commentsCount = $post->comments()->count();
         $engagementScore = $post->engagementScore();
 
-        return view('posts.show', compact('post', 'isFavorited', 'isPinned', 'comments', 'commentsCount', 'engagementScore'));
+        // Series navigation ("bài viết dài kỳ"): readers see published parts
+        // only, while the author and admins also see drafts.
+        $seriesParts = collect();
+        $previousPart = null;
+        $nextPart = null;
+
+        if ($post->isSeries()) {
+            $seriesParts = $post->seriesParts((bool) ($user && $post->isManagedBy($user)));
+            $currentIndex = $seriesParts->search(fn (Post $part) => $part->is($post));
+
+            if ($currentIndex !== false) {
+                $previousPart = $currentIndex > 0 ? $seriesParts->get($currentIndex - 1) : null;
+                $nextPart = $currentIndex < $seriesParts->count() - 1 ? $seriesParts->get($currentIndex + 1) : null;
+            }
+        }
+
+        return view('posts.show', compact(
+            'post',
+            'isFavorited',
+            'isPinned',
+            'comments',
+            'commentsCount',
+            'engagementScore',
+            'seriesParts',
+            'previousPart',
+            'nextPart',
+        ));
     }
 }

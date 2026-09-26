@@ -28,6 +28,10 @@ class PostFactory extends Factory
             'slug' => Str::slug($title).'-'.fake()->unique()->numberBetween(1, 999999),
             'summary' => fake()->sentence(18),
             'content' => '<p>'.fake()->paragraph(6).'</p><p>'.fake()->paragraph(4).'</p>',
+            'content_type' => Post::CONTENT_TYPE_TEXT,
+            'video_url' => null,
+            'series_title' => null,
+            'series_part' => null,
             'image' => null,
             'image_alt' => null,
             'category' => fake()->randomElement(['cong-nghe', 'hoc-tap', 'cuoc-song', 'tutorial', 'general']),
@@ -67,5 +71,28 @@ class PostFactory extends Factory
     public function inCategory(string $category): static
     {
         return $this->state(fn (array $attributes) => ['category' => $category]);
+    }
+
+    /**
+     * A video post (embedded YouTube / Vimeo player instead of written body).
+     */
+    public function video(?string $url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'content_type' => Post::CONTENT_TYPE_VIDEO,
+            'video_url' => $url,
+            'content' => '',
+        ]);
+    }
+
+    /**
+     * Part of a long-running series ("bài viết dài kỳ").
+     */
+    public function inSeries(string $seriesTitle, int $part): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'series_title' => $seriesTitle,
+            'series_part' => $part,
+        ]);
     }
 }

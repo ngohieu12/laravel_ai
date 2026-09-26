@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Services\PostImage;
 use App\Support\VietnameseText;
+use App\Support\VideoUrl;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,11 +18,31 @@ class Post extends Model
 {
     use HasFactory;
 
+    /** Plain written-article content (default). */
+    public const CONTENT_TYPE_TEXT = 'text';
+
+    /** Embedded-video content (YouTube / Vimeo link). */
+    public const CONTENT_TYPE_VIDEO = 'video';
+
+    /**
+     * Content types a post may use.
+     *
+     * @var list<string>
+     */
+    public const CONTENT_TYPES = [
+        self::CONTENT_TYPE_TEXT,
+        self::CONTENT_TYPE_VIDEO,
+    ];
+
     protected $fillable = [
         'title',
         'slug',
         'summary',
         'content',
+        'content_type',
+        'video_url',
+        'series_title',
+        'series_part',
         'image',
         'image_alt',
         'category',
@@ -31,6 +53,7 @@ class Post extends Model
     protected $casts = [
         'is_published' => 'boolean',
         'user_id' => 'integer',
+        'series_part' => 'integer',
         'views_count' => 'integer',
         'shares_count' => 'integer',
         'favorites_count' => 'integer',
@@ -86,6 +109,62 @@ class Post extends Model
         $alt = trim((string) $this->image_alt);
 
         return $alt !== '' ? $alt : (string) $this->title;
+    }
+
+    // ------------- Content type & series (bài viết dài kỳ) -------------
+
+    /**
+     * Whether this post carries an embedded video (link YouTube / Vimeo).
+     */
+    public function isVideo(): bool
+    {
+        return $this->content_type === self::CONTENT_TYPE_VIDEO;
+    }
+
+    /**
+     * Whether this post belongs to a long-running series (chuỗi bài dài kỳ).
+     */
+    public function isSeries(): bool
+    {
+        return filled($this->series_title);
+    }
+
+    /**
+     * Embeddable player URL for video posts (null for text posts or links
+     * that cannot be embedded).
+     */
+    public function videoEmbedUrl(): ?string
+    {
+        return VideoUrl::embedUrl($this->video_url);
+    }
+
+    /**
+     * Query the posts of the same series, ordered by part number.
+     *
+     * Drafts are hidden from readers and shown only to whoever manages the
+     * post (its author and admins).
+     */
+    public function seriesPartsQuery(bool $includeDrafts = false): Builder
+    {
+        return static::query()
+            ->where('series_title', $this->series_title)
+            ->when(! $includeDrafts, fn (Builder $query) => $query->published())
+            ->orderBy('series_part')
+            ->orderBy('id');
+    }
+
+    /**
+     * The published (or manageable) posts of this series, ordered by part.
+     *
+     * @return Collection<int, Post>
+     */
+    public function seriesParts(bool $includeDrafts = false): Collection
+    {
+        if (! $this->isSeries()) {
+            return new Collection();
+        }
+
+        return $this->seriesPartsQuery($includeDrafts)->get();
     }
 
     /**

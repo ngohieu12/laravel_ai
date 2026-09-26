@@ -29,9 +29,39 @@
             </div>
 
             <div>
-                <label for="content" class="block text-sm font-medium text-gray-700 mb-1">Nội dung <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Loại nội dung</label>
+                <div class="flex flex-wrap gap-4">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="content_type" value="text" {{ old('content_type', $post->content_type) === App\Models\Post::CONTENT_TYPE_TEXT ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
+                        <span class="ml-2 text-sm text-gray-700">📝 Bài viết chữ</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="content_type" value="video" {{ old('content_type', $post->content_type) === App\Models\Post::CONTENT_TYPE_VIDEO ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
+                        <span class="ml-2 text-sm text-gray-700">🎥 Bài viết video</span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Bài video: dán link YouTube hoặc Vimeo, phần nội dung chỉ là mô tả (không bắt buộc).</p>
+            </div>
+
+            <div id="video-url-wrap" class="hidden">
+                <label for="video_url" class="block text-sm font-medium text-gray-700 mb-1">Đường dẫn video <span class="text-red-500">*</span></label>
+                <input type="url" id="video_url" name="video_url" value="{{ old('video_url', $post->video_url) }}"
+                    class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                    placeholder="https://www.youtube.com/watch?v=...">
+                @error('video_url')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
+                    <span id="content-label-text">Nội dung</span> <span id="content-required-mark" class="text-red-500">*</span>
+                </label>
                 <textarea id="content" name="content" rows="15" required
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400 font-mono text-sm">{{ old('content', $post->content) }}</textarea>
+                @error('content')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             <div>
@@ -79,6 +109,30 @@
 
             <x-posts.tag-input :value="old('tags', \App\Models\Tag::toInputString($post->tags))" :suggestions="$tagSuggestions" />
 
+            <!-- Bài viết dài kỳ (chuỗi) -->
+            <div class="border border-indigo-100 bg-indigo-50/50 rounded-xl p-5 space-y-3">
+                <div>
+                    <label for="series_title" class="block text-sm font-medium text-gray-700 mb-1">📖 Chuỗi bài viết dài kỳ <span class="text-xs font-normal text-gray-400">(tùy chọn)</span></label>
+                    <input type="text" id="series_title" name="series_title" value="{{ old('series_title', $post->series_title) }}" maxlength="150"
+                        class="w-full border-gray-300 rounded-lg px-4 py-2.5 border focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                        placeholder="VD: Học Laravel từ đầu">
+                    <p class="text-xs text-gray-500 mt-1">Dùng cùng một tên chuỗi ở nhiều bài viết để gom thành bộ — độc giả sẽ thấy danh sách các phần và nút chuyển phần trước / sau.</p>
+                    @error('series_title')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="max-w-xs">
+                    <label for="series_part" class="block text-sm font-medium text-gray-700 mb-1">Số phần <span class="text-red-500">*</span></label>
+                    <input type="number" id="series_part" name="series_part" value="{{ old('series_part', $post->series_part) }}" min="1" step="1"
+                        class="w-full border-gray-300 rounded-lg px-4 py-2.5 border focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                        placeholder="VD: 1">
+                    <p class="text-xs text-gray-500 mt-1">Mỗi bài một số phần, không trùng nhau trong cùng chuỗi.</p>
+                    @error('series_part')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
             <div class="flex items-center">
                 <input type="checkbox" id="is_published" name="is_published" value="1" {{ old('is_published', $post->is_published) ? 'checked' : '' }}
                     class="w-4 h-4 text-slate-600 border-gray-300 rounded focus:ring-slate-400">
@@ -99,4 +153,29 @@
 @endsection
 @push('scripts')
     @include('components.posts.image-preview-script')
+    <script>
+        // Ẩn / hiện ô link video theo loại nội dung; bài video không bắt buộc nội dung chữ.
+        (function () {
+            const radios = document.querySelectorAll('input[name="content_type"]');
+            const videoWrap = document.getElementById('video-url-wrap');
+            const contentInput = document.getElementById('content');
+            const contentMark = document.getElementById('content-required-mark');
+            const contentLabelText = document.getElementById('content-label-text');
+
+            function sync() {
+                const checked = document.querySelector('input[name="content_type"]:checked');
+                const isVideo = !!checked && checked.value === 'video';
+                if (videoWrap) videoWrap.classList.toggle('hidden', !isVideo);
+                if (contentInput) {
+                    contentInput.required = !isVideo;
+                    contentInput.rows = isVideo ? 4 : 15;
+                }
+                if (contentMark) contentMark.classList.toggle('hidden', isVideo);
+                if (contentLabelText) contentLabelText.textContent = isVideo ? 'Mô tả video (không bắt buộc)' : 'Nội dung';
+            }
+
+            radios.forEach(function (radio) { radio.addEventListener('change', sync); });
+            sync();
+        })();
+    </script>
 @endpush
