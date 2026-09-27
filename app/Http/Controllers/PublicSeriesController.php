@@ -39,6 +39,8 @@ class PublicSeriesController extends Controller
                     'description' => $series->blurb(),
                     'parts_count' => $series->published_parts_count,
                     'long_form_count' => $series->long_form_parts_count,
+                    'image_url' => $series->imageUrl(),
+                    'image_alt' => $series->imageAlt(),
                     'minutes' => (int) $parts->sum(fn (Post $post): int => $post->readingMinutes()),
                 ];
             });

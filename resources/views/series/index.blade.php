@@ -37,7 +37,13 @@
     @if($series->count() > 0)
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             @foreach($series as $item)
-                <div class="fade-in flex flex-col bg-white border border-stone-200 rounded-2xl p-6 hover:border-stone-300 hover:shadow-lg hover:-translate-y-0.5 transition">
+                <div class="fade-in flex flex-col bg-white border border-stone-200 rounded-2xl overflow-hidden hover:border-stone-300 hover:shadow-lg hover:-translate-y-0.5 transition">
+                    @if($item['image_url'])
+                        <img src="{{ $item['image_url'] }}" alt="{{ $item['image_alt'] }}" loading="lazy"
+                            class="w-full aspect-[16/9] object-cover bg-stone-100">
+                    @endif
+
+                    <div class="flex flex-1 flex-col p-6">
                     <div class="flex items-center justify-between gap-2">
                         <span class="inline-flex items-center text-xs font-semibold text-stone-500 bg-stone-100 rounded-full px-2.5 py-0.5">
                             {{ $item['parts_count'] }} phần
@@ -65,6 +71,7 @@
                         <a href="{{ route('series.show', $item['id']) }}" class="font-semibold text-stone-800 hover:text-amber-800 transition">
                             Bắt đầu đọc →
                         </a>
+                    </div>
                     </div>
                 </div>
             @endforeach

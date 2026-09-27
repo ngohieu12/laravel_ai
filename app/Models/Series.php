@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PostImage;
 use Database\Factories\SeriesFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * with `series_part`, so renaming the title never splits a series in two.
  * Whether a part is worth reading in depth is flagged by hand on the post
  * (`is_long_form`) instead of being inferred from its length.
+ *
+ * The cover image belongs to the series itself rather than to its first part,
+ * so the list screen keeps a stable face for the whole series.
  */
 class Series extends Model
 {
@@ -25,12 +29,23 @@ class Series extends Model
     protected $fillable = [
         'title',
         'description',
+        'image',
+        'image_alt',
         'user_id',
     ];
 
     protected $casts = [
         'user_id' => 'integer',
     ];
+
+    /**
+     * Resolved cover URL plus the `image` value it was resolved from, so the
+     * views can call imageUrl() repeatedly at no cost while still seeing a
+     * fresh value if the attribute changes.
+     */
+    private ?string $imageUrlCache = null;
+
+    private string $imageUrlCacheKey = "\0";
 
     /**
      * The posts of this series, in reading order.
@@ -66,6 +81,31 @@ class Series extends Model
             ->where('is_published', true)
             ->orderBy('series_part')
             ->orderBy('id');
+    }
+
+    /**
+     * Public URL of the series cover image (null when the series has none).
+     */
+    public function imageUrl(): ?string
+    {
+        $key = (string) $this->image;
+
+        if ($this->imageUrlCacheKey !== $key) {
+            $this->imageUrlCache = app(PostImage::class)->url($this->image);
+            $this->imageUrlCacheKey = $key;
+        }
+
+        return $this->imageUrlCache;
+    }
+
+    /**
+     * Alt text of the cover image, falling back to the series title.
+     */
+    public function imageAlt(): string
+    {
+        $alt = trim((string) $this->image_alt);
+
+        return $alt !== '' ? $alt : (string) $this->title;
     }
 
     /**

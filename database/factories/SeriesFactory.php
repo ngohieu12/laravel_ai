@@ -19,4 +19,15 @@ class SeriesFactory extends Factory
             'user_id' => User::factory(),
         ];
     }
+
+    /**
+     * A series that carries its own cover image.
+     */
+    public function withImage(?string $image = 'series/cover.jpg', ?string $alt = 'Ảnh đại diện chuỗi'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'image' => $image,
+            'image_alt' => $alt,
+        ]);
+    }
 }
