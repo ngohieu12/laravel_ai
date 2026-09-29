@@ -95,8 +95,18 @@
                         </div>
                     @endif
 
+                    @if($part->isAudio() && $part->audioUrl())
+                        <figure class="mt-6 rounded-xl border border-amber-100 bg-amber-50/60 p-4">
+                            <figcaption class="mb-2 flex items-center gap-2 text-sm font-medium text-amber-900">
+                                <span>🎧</span>
+                                <span class="truncate">{{ $part->audioTitle() }}</span>
+                            </figcaption>
+                            <audio controls preload="none" class="w-full" src="{{ $part->audioUrl() }}"></audio>
+                        </figure>
+                    @endif
+
                     <div class="prose mt-6 text-stone-700">
-                        {!! \App\Support\HtmlSanitizer::sanitize($part->content) !!}
+                        {!! \App\Support\Mentions::renderHtml(\App\Support\HtmlSanitizer::sanitize($part->content)) !!}
                     </div>
 
                     <div class="mt-6 pt-4 border-t border-stone-100">

@@ -35,15 +35,22 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Loại nội dung</label>
                 <div class="flex flex-wrap gap-4">
                     <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" name="content_type" value="text" {{ old('content_type', Post::CONTENT_TYPE_TEXT) === Post::CONTENT_TYPE_TEXT ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
+                        <input type="radio" name="content_type" value="text" {{ old('content_type', request('content_type', Post::CONTENT_TYPE_TEXT)) === Post::CONTENT_TYPE_TEXT ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
                         <span class="ml-2 text-sm text-gray-700">📝 Bài viết chữ</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
-                        <input type="radio" name="content_type" value="video" {{ old('content_type') === Post::CONTENT_TYPE_VIDEO ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
+                        <input type="radio" name="content_type" value="video" {{ old('content_type', request('content_type')) === Post::CONTENT_TYPE_VIDEO ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
                         <span class="ml-2 text-sm text-gray-700">🎥 Bài viết video</span>
                     </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="content_type" value="audio" {{ old('content_type', request('content_type')) === Post::CONTENT_TYPE_AUDIO ? 'checked' : '' }} class="w-4 h-4 text-slate-600 border-gray-300 focus:ring-slate-400">
+                        <span class="ml-2 text-sm text-gray-700">🎧 Bài viết audio</span>
+                    </label>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Bài video: dán link YouTube hoặc Vimeo, phần nội dung chỉ là mô tả (không bắt buộc).</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    Bài video: dán link YouTube hoặc Vimeo. Bài audio: tải lên tệp MP3.
+                    Cả hai loại chỉ cần phần nội dung làm mô tả (không bắt buộc).
+                </p>
             </div>
 
             <div id="video-url-wrap" class="hidden">
@@ -56,13 +63,36 @@
                 @enderror
             </div>
 
-            <div>
+            <div id="audio-wrap" class="hidden space-y-3">
+                <div>
+                    <label for="audio" class="block text-sm font-medium text-gray-700 mb-1">Tệp âm thanh <span class="text-red-500">*</span></label>
+                    <input type="file" id="audio" name="audio" accept=".mp3,.m4a,.wav,.ogg,audio/mpeg,audio/mp4,audio/wav,audio/ogg"
+                        class="w-full border-gray-300 rounded-lg px-4 py-2 border text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200">
+                    @error('audio')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-gray-500 mt-1">MP3, M4A, WAV hoặc OGG — tối đa 20MB.</p>
+                </div>
+                <div>
+                    <label for="audio_title" class="block text-sm font-medium text-gray-700 mb-1">Tên đoạn âm thanh</label>
+                    <input type="text" id="audio_title" name="audio_title" value="{{ old('audio_title') }}" maxlength="255"
+                        class="w-full border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                        placeholder="VD: Tập 1 — Mở đầu">
+                    @error('audio_title')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-gray-500 mt-1">Bỏ trống thì hiển thị tiêu đề bài viết.</p>
+                </div>
+            </div>
+
+            <div data-mention-root>
                 <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
                     <span id="content-label-text">Nội dung</span> <span id="content-required-mark" class="text-red-500">*</span>
                 </label>
-                <textarea id="content" name="content" rows="15" required
+                <textarea id="content" name="content" rows="15" required data-mention-input
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400 font-mono text-sm"
-                    placeholder="Viết nội dung bài viết của bạn ở đây...">{{ old('content') }}</textarea>
+                    placeholder="Viết nội dung bài viết của bạn ở đây... Gõ @ để nhắc tên">{{ old('content') }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Gõ <span class="font-mono">@</span> để nhắc tên một thành viên — họ sẽ nhận được thông báo.</p>
                 @error('content')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
@@ -96,7 +126,7 @@
 
             <div>
                 <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Danh mục <span class="text-red-500">*</span></label>
-                <input type="text" id="category" name="category" value="{{ old('category', 'general') }}" required list="category-list"
+                <input type="text" id="category" name="category" value="{{ old('category', $defaultCategory ?? 'general') }}" required list="category-list"
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
                     placeholder="VD: cong-nghe, doi-song, hoc-tap...">
                 <datalist id="category-list">
@@ -168,25 +198,48 @@
 @endsection
 @push('scripts')
     @include('components.posts.image-preview-script')
+    <x-posts.mention-input />
     <script>
-        // Ẩn / hiện ô link video theo loại nội dung; bài video không bắt buộc nội dung chữ.
+        // Ẩn / hiện ô link video và ô upload audio theo loại nội dung;
+        // bài video / audio không bắt buộc nội dung chữ.
         (function () {
             const radios = document.querySelectorAll('input[name="content_type"]');
             const videoWrap = document.getElementById('video-url-wrap');
+            const audioWrap = document.getElementById('audio-wrap');
+            const audioInput = document.getElementById('audio');
             const contentInput = document.getElementById('content');
             const contentMark = document.getElementById('content-required-mark');
             const contentLabelText = document.getElementById('content-label-text');
+            const labels = { video: 'Mô tả video (không bắt buộc)', audio: 'Mô tả audio (không bắt buộc)' };
+            // Bài video / audio mặc định đi kèm danh mục Video / MP3, nhưng chỉ
+            // ghi đè khi tác giả chưa tự nhập danh mục khác.
+            const categoryInput = document.getElementById('category');
+            const defaultCategories = { text: 'general', video: 'Video', audio: 'MP3' };
+            let categoryTouched = false;
+
+            if (categoryInput) {
+                categoryInput.addEventListener('input', function () { categoryTouched = true; });
+            }
 
             function sync() {
                 const checked = document.querySelector('input[name="content_type"]:checked');
-                const isVideo = !!checked && checked.value === 'video';
-                if (videoWrap) videoWrap.classList.toggle('hidden', !isVideo);
+                const type = checked ? checked.value : 'text';
+                const isText = type === 'text';
+
+                if (videoWrap) videoWrap.classList.toggle('hidden', type !== 'video');
+                if (audioWrap) audioWrap.classList.toggle('hidden', type !== 'audio');
+                if (audioInput) audioInput.required = type === 'audio';
                 if (contentInput) {
-                    contentInput.required = !isVideo;
-                    contentInput.rows = isVideo ? 4 : 15;
+                    contentInput.required = isText;
+                    contentInput.rows = isText ? 15 : 4;
                 }
-                if (contentMark) contentMark.classList.toggle('hidden', isVideo);
-                if (contentLabelText) contentLabelText.textContent = isVideo ? 'Mô tả video (không bắt buộc)' : 'Nội dung';
+                if (contentMark) contentMark.classList.toggle('hidden', !isText);
+                if (contentLabelText) {
+                    contentLabelText.textContent = isText ? 'Nội dung' : (labels[type] || 'Nội dung');
+                }
+                if (categoryInput && !categoryTouched && defaultCategories[type]) {
+                    categoryInput.value = defaultCategories[type];
+                }
             }
 
             radios.forEach(function (radio) { radio.addEventListener('change', sync); });

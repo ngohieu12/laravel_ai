@@ -39,6 +39,8 @@ class PostController extends Controller
             $query->where('category', $request->category);
         }
 
+        $query->ofType($request->input('type'));
+
         $activeTag = null;
 
         if ($request->filled('tag')) {

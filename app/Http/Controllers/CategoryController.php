@@ -18,6 +18,9 @@ class CategoryController extends Controller
      */
     public function index(): View
     {
+        // The Video / MP3 buckets are part of the app, so they are always there.
+        Category::ensureDefaults();
+
         $counts = Category::counts();
 
         $categories = Category::query()

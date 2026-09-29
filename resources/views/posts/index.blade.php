@@ -125,6 +125,14 @@
                 </select>
             </div>
             <div>
+                <select name="type" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400">
+                    <option value="">Mọi loại nội dung</option>
+                    <option value="text" {{ request('type') === 'text' ? 'selected' : '' }}>📝 Bài chữ</option>
+                    <option value="video" {{ request('type') === 'video' ? 'selected' : '' }}>🎥 Bài video</option>
+                    <option value="audio" {{ request('type') === 'audio' ? 'selected' : '' }}>🎧 Bài audio</option>
+                </select>
+            </div>
+            <div>
                 <select name="sort" class="border-gray-300 rounded-lg px-4 py-2 border focus:ring-2 focus:ring-slate-400">
                     <option value="newest" {{ ($sort ?? 'newest') === 'newest' ? 'selected' : '' }}>🕒 Mới nhất</option>
                     <option value="oldest" {{ ($sort ?? '') === 'oldest' ? 'selected' : '' }}>🕒 Cũ nhất</option>
@@ -137,7 +145,7 @@
             <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg transition">
                 Tìm kiếm
             </button>
-            @if(request('search') || request('category') || request('sort') || request('tag'))
+            @if(request('search') || request('category') || request('type') || request('sort') || request('tag'))
                 <a href="{{ route('posts.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition">
                     Xóa bộ lọc
                 </a>
@@ -159,6 +167,9 @@
                                 </span>
                                 @if($post->isVideo())
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
+                                @endif
+                                @if($post->isAudio())
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">🎧 Audio</span>
                                 @endif
                                 @if($post->isSeries())
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="Chuỗi: {{ $post->series?->title }}">📖 Phần {{ $post->series_part }}</span>
@@ -210,6 +221,9 @@
                                             </span>
                                             @if($post->isVideo())
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
+                                            @endif
+                                            @if($post->isAudio())
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">🎧 Audio</span>
                                             @endif
                                             @if($post->isSeries())
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="Chuỗi: {{ $post->series?->title }}">📖 Phần {{ $post->series_part }}</span>

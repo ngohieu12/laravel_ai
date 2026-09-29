@@ -23,7 +23,25 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
 
 ## Blog Manager — tính năng & cài đặt
 
-Ứng dụng demo trong repo này là một blog có chatbot AI, kèm hai nhóm tính năng chính:
+Ứng dụng demo trong repo này là một blog có chatbot AI, kèm các nhóm tính năng chính:
+
+**Loại nội dung: chữ, video và audio**
+
+- Mỗi bài viết chọn một loại nội dung ở dashboard: **📝 bài viết chữ**, **🎥 bài viết video** (dán link YouTube / Vimeo) hoặc **🎧 bài viết audio** (tải lên tệp MP3).
+- Bài audio lưu tệp trên disk `public` trong `storage/app/public/posts/audio/`, chấp nhận `mp3, m4a, wav, ogg`, tối đa 20 MB; trang bài viết hiển thị trình phát `<audio controls>` kèm tên đoạn âm thanh (tuỳ chọn, mặc định lấy tiêu đề bài).
+- Bài video / audio không bắt buộc có nội dung chữ (nội dung chỉ làm mô tả); đổi sang loại khác sẽ tự xoá tệp âm thanh cũ, xoá bài cũng xoá luôn tệp.
+- Danh sách bài ( công khai và trong dashboard) hiển thị badge **🎧 Audio** bên cạnh badge **🎥 Video**.
+- **Thư viện MP3** (`/dashboard/audio`) là màn danh sách riêng cho toàn bộ bài audio: nghe thử trực tiếp, dung lượng, tên file, tác giả, trạng thái, lọc theo từ khoá / trạng thái, xoá riêng file MP3 mà vẫn giữ bài viết. Admin xem toàn bộ, creator chỉ thấy file của mình.
+- **Bộ lọc loại nội dung** ngay trong danh sách bài (cả trang công khai lẫn dashboard): 📝 Chữ / 🎥 Video / 🎧 Audio, tham số `?type=text|video|audio`, chọn xong tự lọc.
+- **Danh mục mặc định `Video` và `MP3`**: hệ thống chỉ tạo sẵn hai danh mục này (`Category::DEFAULTS`, seed `CategorySeeder`). Bài video mặc định rơi vào danh mục `Video`, bài audio vào `MP3`; tác giả vẫn tự ghi đè được nếu muốn. Hai danh mục được tự tạo lại mỗi lần mở màn quản lý nên xoá nhầm không sao.
+- **Màn admin "Danh mục Video & MP3"** (`/admin/media-categories`): xem số bài / số bài đã xuất bản / số bài đúng loại nội dung của từng danh mục, lọc theo từng nhóm, đổi tên danh mục (cascade sang mọi bài) và nhảy tới danh sách bài tương ứng.
+
+**@mention trong bình luận và bài viết**
+
+- Mỗi tài khoản có tên định danh `@username` tự sinh từ tên hiển thị (bỏ dấu, không trùng — trùng thì thêm hậu tố `-2`, `-3`…). Xem tại hồ sơ quản trị `/admin/users/{id}`.
+- Gõ `@` trong ô bình luận (kể cả ô trả lời) hoặc trong trình soạn bài ở dashboard sẽ hiện danh sách gợi ý: tìm theo cả `username` lẫn tên có dấu; ↑/↓ chọn, Enter/Tab chèn, Esc đóng.
+- Mention được tô sáng khi hiển thị (bình luận và thân bài viết), kèm tooltip tên + vai trò; nội dung HTML của bài chỉ thay trong text node nên không ảnh hưởng markup.
+- Người được nhắc tên nhận thông báo 🔔 (loại `mention`) dẫn thẳng tới bài viết / bình luận. Bài nháp không gửi thông báo, và sửa lại bài đã xuất bản không gửi lại thông báo cho người đã được nhắc.
 
 **Ảnh bài viết (mỗi bài 1 ảnh)**
 

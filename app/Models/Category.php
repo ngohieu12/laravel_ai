@@ -18,9 +18,60 @@ class Category extends Model
 {
     use HasFactory;
 
+    /** Category every video post is filed under by default. */
+    public const VIDEO = 'Video';
+
+    /** Category every audio (MP3) post is filed under by default. */
+    public const MP3 = 'MP3';
+
+    /**
+     * The only categories created out of the box.
+     *
+     * @var list<string>
+     */
+    public const DEFAULTS = [
+        self::VIDEO,
+        self::MP3,
+    ];
+
+    /**
+     * Content type each default category is meant for.
+     *
+     * @var array<string, string>
+     */
+    public const MEDIA_CONTENT_TYPES = [
+        self::VIDEO => Post::CONTENT_TYPE_VIDEO,
+        self::MP3 => Post::CONTENT_TYPE_AUDIO,
+    ];
+
     protected $fillable = [
         'name',
     ];
+
+    /**
+     * Create the default categories when they are missing.
+     *
+     * Called by the seeder and by the admin screen, so a database that lost
+     * them (deleted by hand, fresh install without seeding) still gets the
+     * Video / MP3 buckets back.
+     */
+    public static function ensureDefaults(): void
+    {
+        foreach (self::DEFAULTS as $name) {
+            static::query()->firstOrCreate(['name' => $name]);
+        }
+    }
+
+    /**
+     * Default category for a content type (null for written articles, which
+     * keep the free-form category the author picked).
+     */
+    public static function defaultFor(?string $contentType): ?string
+    {
+        $name = array_search((string) $contentType, self::MEDIA_CONTENT_TYPES, true);
+
+        return $name === false ? null : (string) $name;
+    }
 
     /**
      * Categories with their number of posts (name => count).

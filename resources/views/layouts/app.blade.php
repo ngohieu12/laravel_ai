@@ -16,6 +16,7 @@
         .prose li { margin-bottom: 0.5em; }
         .prose blockquote { border-left: 4px solid #64748b; padding-left: 1em; margin: 1em 0; color: #6b7280; font-style: italic; }
         .prose code { background: #f3f4f6; padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
+        .mention { color: #0369a1; background: #e0f2fe; border-radius: 4px; padding: 0 3px; font-weight: 500; }
         .prose pre { background: #1f2937; color: #e5e7eb; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
         .prose pre code { background: transparent; color: inherit; }
         .chat-bubble { animation: fadeIn 0.3s ease-in; }

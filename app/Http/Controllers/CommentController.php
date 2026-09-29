@@ -9,7 +9,9 @@ use App\Models\User;
 use App\Notifications\CommentFavorited;
 use App\Notifications\CommentReplied;
 use App\Notifications\PostCommented;
+use App\Notifications\UserMentioned;
 use App\Services\PostEngagementTracker;
+use App\Support\Mentions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -30,7 +32,8 @@ class CommentController extends Controller
 
         $engagement->trackComment($request, $post, $request->user());
 
-        $this->notifyAboutNewComment($post, $comment, $request->user());
+        $notified = $this->notifyAboutNewComment($post, $comment, $request->user());
+        $this->notifyMentionedUsers($post, $comment, $request->user(), $notified);
 
         return redirect()
             ->route('posts.show', ['post' => $post])
@@ -68,8 +71,10 @@ class CommentController extends Controller
      * Notify the interested party about a new comment: the post author for
      * top-level comments, the parent comment's author for replies. Nobody is
      * notified about their own actions.
+     *
+     * @return list<int> ids of the users who already received a notification
      */
-    private function notifyAboutNewComment(Post $post, Comment $comment, User $actor): void
+    private function notifyAboutNewComment(Post $post, Comment $comment, User $actor): array
     {
         $parent = $comment->parent;
 
@@ -79,15 +84,35 @@ class CommentController extends Controller
             if ($parentAuthor !== null && ! $parentAuthor->is($actor)) {
                 // The payload points at the comment being replied to, not the reply itself.
                 $parentAuthor->notify(new CommentReplied($actor, $post, $parent));
+
+                return [$parentAuthor->id];
             }
 
-            return;
+            return [];
         }
 
         $postAuthor = $post->user;
 
         if ($postAuthor !== null && ! $postAuthor->is($actor)) {
             $postAuthor->notify(new PostCommented($actor, $post, $comment));
+
+            return [$postAuthor->id];
         }
+
+        return [];
+    }
+
+    /**
+     * Notify every account whose @mention handle appears in the comment body.
+     * Users who were already notified about this comment (the post author or
+     * the parent commenter) and the author themselves are skipped.
+     *
+     * @param  list<int>  $alreadyNotified
+     */
+    private function notifyMentionedUsers(Post $post, Comment $comment, User $actor, array $alreadyNotified): void
+    {
+        Mentions::users($comment->content)
+            ->reject(fn (User $user): bool => $user->is($actor) || in_array($user->id, $alreadyNotified, true))
+            ->each(fn (User $user) => $user->notify(new UserMentioned($actor, $post, $comment)));
     }
 }

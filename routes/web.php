@@ -1,16 +1,19 @@
 <?php
 
 use App\Http\Controllers\AdminAnalyticsController;
+use App\Http\Controllers\AdminMediaCategoryController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\CreatorAnalyticsController;
+use App\Http\Controllers\DashboardAudioController;
 use App\Http\Controllers\DashboardPostController;
 use App\Http\Controllers\DashboardSeriesController;
 use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\MentionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PinController;
 use App\Http\Controllers\PostController;
@@ -55,6 +58,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('posts.comments.store');
     Route::post('/posts/{post}/comments/{comment}/favorite', [CommentController::class, 'toggleFavorite'])->name('posts.comments.favorite');
 
+    // Gợi ý @mention cho ô bình luận và trình soạn bài
+    Route::get('/mentions', [MentionController::class, 'index'])
+        ->middleware('throttle:120,1')
+        ->name('mentions.index');
+
     // In-app notifications (chuông 🔔): tương tác trên bài viết / bình luận
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -71,6 +79,10 @@ Route::middleware(['auth', 'role:admin,creator'])->prefix('dashboard')->name('da
     Route::get('/posts/{post}/edit', [DashboardPostController::class, 'edit'])->name('posts.edit');
     Route::put('/posts/{post}', [DashboardPostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [DashboardPostController::class, 'destroy'])->name('posts.destroy');
+
+    // Thư viện MP3: danh sách riêng các bài viết dạng audio.
+    Route::get('/audio', [DashboardAudioController::class, 'index'])->name('audio.index');
+    Route::delete('/audio/{post}', [DashboardAudioController::class, 'destroy'])->name('audio.destroy');
 
     Route::get('/analytics', [CreatorAnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/analytics/posts/{post}', [CreatorAnalyticsController::class, 'show'])->name('analytics.posts.show');
@@ -90,6 +102,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/analytics/posts/{post}', [AdminAnalyticsController::class, 'show'])->name('analytics.posts.show');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('/media-categories', [AdminMediaCategoryController::class, 'index'])->name('media-categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');

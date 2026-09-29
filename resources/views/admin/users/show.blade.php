@@ -29,6 +29,9 @@
                         @endif
                     </h1>
                     <p class="text-gray-500 mt-1">{{ $user->email }}</p>
+                    <p class="text-sm text-gray-400 mt-1" title="Tên định danh để @nhắc tên trong bài viết và bình luận">
+                        @{{ $user->username }}
+                    </p>
                     <div class="flex flex-wrap items-center gap-2 mt-3">
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-medium
                             {{ $user->isAdmin() ? 'bg-slate-800 text-white' : ($user->isCreator() ? 'bg-slate-600 text-white' : 'bg-slate-100 text-slate-700') }}">

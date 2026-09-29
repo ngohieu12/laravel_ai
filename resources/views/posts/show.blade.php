@@ -49,6 +49,11 @@
                         🎥 Video
                     </span>
                 @endif
+                @if($post->isAudio())
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+                        🎧 Audio
+                    </span>
+                @endif
                 @if($post->isSeries())
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800" title="Thuộc chuỗi bài viết dài kỳ">
                         📖 Dài kỳ — Phần {{ $post->series_part }}
@@ -131,10 +136,24 @@
                 </div>
             @endif
 
+            @if($post->isAudio() && $post->audioUrl())
+                <!-- Audio player (bài viết dạng audio) -->
+                <figure class="mb-6 rounded-xl border border-amber-100 bg-amber-50/60 p-5">
+                    <figcaption class="mb-3 flex items-center gap-2 text-sm font-medium text-amber-900">
+                        <span>🎧</span>
+                        <span class="truncate">{{ $post->audioTitle() }}</span>
+                    </figcaption>
+                    <audio controls preload="none" class="w-full"
+                        src="{{ $post->audioUrl() }}">
+                        Trình duyệt của bạn không hỗ trợ phát tệp âm thanh.
+                    </audio>
+                </figure>
+            @endif
+
             @if(! $post->isVideo() || trim((string) $post->content) !== '')
                 <!-- Content -->
                 <div class="prose text-gray-700">
-                    {!! \App\Support\HtmlSanitizer::sanitize($post->content) !!}
+                    {!! \App\Support\Mentions::renderHtml(\App\Support\HtmlSanitizer::sanitize($post->content)) !!}
                 </div>
             @endif
 
@@ -297,11 +316,11 @@
 
         @auth
         <!-- New comment form (root level) -->
-        <form action="{{ route('posts.comments.store', $post) }}" method="POST" class="space-y-3">
+        <form action="{{ route('posts.comments.store', $post) }}" method="POST" class="space-y-3" data-mention-root>
             @csrf
             <div>
-                <textarea name="content" rows="3" required maxlength="2000"
-                    placeholder="Viết bình luận của bạn..."
+                <textarea name="content" rows="3" required maxlength="2000" data-mention-input
+                    placeholder="Viết bình luận của bạn... Gõ @ để nhắc tên ai đó"
                     class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400"></textarea>
                 @error('content')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -340,6 +359,7 @@
 @endsection
 
 @push('scripts')
+    <x-posts.mention-input />
 <script>
     // Record share clicks before the browser opens the social network.
     (function () {

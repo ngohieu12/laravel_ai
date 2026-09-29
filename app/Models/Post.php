@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\PostAudio;
 use App\Services\PostImage;
 use App\Support\VideoUrl;
 use App\Support\VietnameseText;
@@ -24,6 +25,9 @@ class Post extends Model
     /** Embedded-video content (YouTube / Vimeo link). */
     public const CONTENT_TYPE_VIDEO = 'video';
 
+    /** Audio content (an uploaded MP3 file). */
+    public const CONTENT_TYPE_AUDIO = 'audio';
+
     /**
      * Content types a post may use.
      *
@@ -32,6 +36,13 @@ class Post extends Model
     public const CONTENT_TYPES = [
         self::CONTENT_TYPE_TEXT,
         self::CONTENT_TYPE_VIDEO,
+        self::CONTENT_TYPE_AUDIO,
+    ];
+
+    /** Content types whose written body is optional. */
+    public const CONTENT_TYPES_WITHOUT_BODY = [
+        self::CONTENT_TYPE_VIDEO,
+        self::CONTENT_TYPE_AUDIO,
     ];
 
     protected $fillable = [
@@ -41,6 +52,8 @@ class Post extends Model
         'content',
         'content_type',
         'video_url',
+        'audio',
+        'audio_title',
         'series_id',
         'series_part',
         'is_long_form',
@@ -122,6 +135,32 @@ class Post extends Model
     public function isVideo(): bool
     {
         return $this->content_type === self::CONTENT_TYPE_VIDEO;
+    }
+
+    /**
+     * Whether this post carries an uploaded audio file (bài viết dạng audio).
+     */
+    public function isAudio(): bool
+    {
+        return $this->content_type === self::CONTENT_TYPE_AUDIO;
+    }
+
+    /**
+     * Public URL of the audio file, or null when the post has none.
+     */
+    public function audioUrl(): ?string
+    {
+        return app(PostAudio::class)->url($this->audio);
+    }
+
+    /**
+     * Title shown next to the audio player (falls back to the post title).
+     */
+    public function audioTitle(): string
+    {
+        $title = trim((string) $this->audio_title);
+
+        return $title !== '' ? $title : (string) $this->title;
     }
 
     /**
@@ -392,6 +431,30 @@ class Post extends Model
     public function scopeWithTag(Builder $query, string $slug): Builder
     {
         return $query->whereHas('tags', fn (Builder $q) => $q->where('tags.slug', $slug));
+    }
+
+    /**
+     * Filter the listing by content type (text / video / audio). An unknown or
+     * blank value leaves the query untouched.
+     */
+    public function scopeOfType(Builder $query, ?string $type): Builder
+    {
+        if ($type === null || $type === '') {
+            return $query;
+        }
+
+        return in_array($type, self::CONTENT_TYPES, true)
+            ? $query->where('content_type', $type)
+            : $query;
+    }
+
+    /**
+     * Posts that carry an uploaded audio file (bài viết dạng audio có mp3).
+     */
+    public function scopeWithAudio(Builder $query): Builder
+    {
+        return $query->where('content_type', self::CONTENT_TYPE_AUDIO)
+            ->whereNotNull('audio');
     }
 
     public function scopeSearch(Builder $query, string $search): Builder

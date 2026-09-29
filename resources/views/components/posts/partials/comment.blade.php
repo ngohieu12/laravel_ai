@@ -13,6 +13,9 @@
         <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-2 text-sm flex-wrap">
                 <span class="font-medium text-gray-800">{{ $comment->user?->name ?? 'Người dùng' }}</span>
+                @if($comment->user?->username)
+                    <span class="text-xs text-gray-400" title="Tên định danh để @nhắc tên">@{{ $comment->user->username }}</span>
+                @endif
                 <span class="text-gray-400">·</span>
                 <span class="text-gray-500" title="{{ $comment->created_at->format('d/m/Y H:i') }}">{{ $comment->created_at->diffForHumans() }}</span>
                 @if($replyTo)
@@ -20,7 +23,7 @@
                 @endif
             </div>
 
-            <div class="mt-1 text-gray-700 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{{ $comment->content }}</div>
+            <div class="mt-1 text-gray-700 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{!! \App\Support\Mentions::renderText($comment->content) !!}</div>
 
             <!-- Actions -->
             <div class="mt-2 flex items-center space-x-3 text-sm">
@@ -64,8 +67,8 @@
                     <form action="{{ route('posts.comments.store', $post) }}" method="POST">
                         @csrf
                         <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                            <textarea name="content" rows="2" required maxlength="2000"
-                            placeholder="Trả lời {{ '@' . ($comment->user?->name ?? 'người dùng') }}..."
+                            <textarea name="content" rows="2" required maxlength="2000" data-mention-input
+                            placeholder="Trả lời {{ '@' . ($comment->user?->username ?? 'người dùng') }}..."
                             class="w-full border-gray-300 rounded-lg px-3 py-2 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400 text-sm resize-y"></textarea>
                         <div class="flex justify-end space-x-2 mt-2">
                             <button type="button" data-reply-cancel="{{ $comment->id }}" class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 transition">

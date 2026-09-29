@@ -44,6 +44,10 @@
                        class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('dashboard.posts.create') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
                         ✍️ Viết bài mới
                     </a>
+                    <a href="{{ route('dashboard.audio.index') }}"
+                       class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('dashboard.audio.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
+                        🎧 Thư viện MP3
+                    </a>
                 </div>
 
                 <div>
@@ -66,6 +70,10 @@
                     <a href="{{ route('admin.categories.index') }}"
                        class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.categories.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
                         🗂️ Danh mục
+                    </a>
+                    <a href="{{ route('admin.media-categories.index') }}"
+                       class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.media-categories.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">
+                        🎬 Danh mục Video &amp; MP3
                     </a>
                     <a href="{{ route('admin.tags.index') }}"
                        class="block px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.tags.*') ? 'bg-slate-700 text-white' : 'hover:bg-slate-800' }}">

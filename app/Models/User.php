@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\VietnameseText;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -10,8 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
-#[Fillable(['name', 'email', 'password', 'role', 'is_banned', 'ban_reason'])]
+#[Fillable(['name', 'username', 'email', 'password', 'role', 'is_banned', 'ban_reason'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -31,6 +33,40 @@ class User extends Authenticatable
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Every account gets a mention handle (@username) so posts and comments
+     * can @mention it; the handle is derived from the display name and stays
+     * unique across accounts.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $user): void {
+            if (blank($user->username)) {
+                $user->username = self::generateUsername((string) $user->name);
+            }
+        });
+    }
+
+    /**
+     * Build a unique mention handle from a display name: ASCII folded, lower
+     * cased, suffixed with a counter when the base handle is already taken.
+     */
+    public static function generateUsername(string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::slug(VietnameseText::toAscii($name));
+        $base = Str::limit($base !== '' ? $base : 'user', 24, '');
+
+        $username = $base;
+        $suffix = 1;
+
+        while (self::where('username', $username)->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists()) {
+            $suffix++;
+            $username = $base.'-'.$suffix;
+        }
+
+        return $username;
+    }
 
     public function posts(): HasMany
     {

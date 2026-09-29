@@ -5,10 +5,12 @@ namespace App\Http\Requests;
 use App\Models\Post;
 use App\Models\Series;
 use App\Models\Tag;
+use App\Services\PostAudio;
 use App\Support\VideoUrl;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\RequiredIf;
 
 class UpdatePostRequest extends FormRequest
 {
@@ -22,8 +24,10 @@ class UpdatePostRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'summary' => ['required', 'string', 'max:500'],
-            'content' => ['nullable', 'string', 'required_unless:content_type,'.Post::CONTENT_TYPE_VIDEO],
-            'content_type' => ['nullable', 'string', 'in:'.implode(',', Post::CONTENT_TYPES)],
+            'content' => ['nullable', 'string', $this->contentRequiredRule()],
+            // Switching an existing post to audio requires a file, either the
+            // one already stored or a freshly uploaded one.
+            'content_type' => ['nullable', 'string', 'in:'.implode(',', Post::CONTENT_TYPES), $this->audioRequiredRule()],
             'video_url' => [
                 'nullable',
                 'string',
@@ -31,15 +35,53 @@ class UpdatePostRequest extends FormRequest
                 'required_if:content_type,'.Post::CONTENT_TYPE_VIDEO,
                 $this->embeddableVideoRule(),
             ],
+            'audio' => ['nullable', 'file', 'mimes:'.implode(',', PostAudio::ALLOWED_EXTENSIONS), 'max:20480'],
+            'audio_title' => ['nullable', 'string', 'max:255'],
             'series_id' => ['nullable', 'integer', Rule::exists('series', 'id')],
             'is_long_form' => ['nullable', 'boolean'],
             'series_part' => ['nullable', 'integer', 'min:1', 'max:100000', 'required_with:series_id', $this->uniqueSeriesPartRule()],
-            'category' => ['required', 'string', 'max:100'],
+            'category' => ['nullable', 'string', 'max:100'],
             'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'image_alt' => ['nullable', 'string', 'max:255'],
             'is_published' => ['boolean'],
             'tags' => ['nullable', 'string', 'max:1000', $this->tagListRule()],
         ];
+    }
+
+    /**
+     * The written body is mandatory for text posts and optional as a short
+     * description for video / audio posts.
+     */
+    private function contentRequiredRule(): RequiredIf
+    {
+        $type = $this->input('content_type') ?: Post::CONTENT_TYPE_TEXT;
+
+        return new RequiredIf($type === Post::CONTENT_TYPE_TEXT, 'Vui lòng nhập nội dung.');
+    }
+
+    /**
+     * An audio post needs an audio file: a new upload, or the one the post
+     * already carries.
+     */
+    private function audioRequiredRule(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if ($this->input('content_type') !== Post::CONTENT_TYPE_AUDIO) {
+                return;
+            }
+
+            if ($this->hasFile('audio')) {
+                return;
+            }
+
+            $post = $this->route('post');
+
+            if ($post instanceof Post && filled($post->audio) && ! $this->boolean('remove_audio')) {
+                return;
+            }
+
+            $fail('Bài viết audio cần tệp âm thanh (MP3).');
+        };
     }
 
     /**
@@ -121,7 +163,7 @@ class UpdatePostRequest extends FormRequest
             'title.required' => 'Vui lòng nhập tiêu đề.',
             'summary.required' => 'Vui lòng nhập tóm tắt.',
             'content.required' => 'Vui lòng nhập nội dung.',
-            'category.required' => 'Vui lòng nhập danh mục.',
+            'category.max' => 'Tên danh mục tối đa 100 ký tự.',
             'image.file' => 'Ảnh đại diện phải là một tệp tin hợp lệ.',
             'image.image' => 'Tệp tải lên phải là ảnh.',
             'image.mimes' => 'Ảnh đại diện phải có định dạng JPG, PNG, WEBP hoặc GIF.',
@@ -129,9 +171,14 @@ class UpdatePostRequest extends FormRequest
             'image_alt.max' => 'Mô tả ảnh tối đa 255 ký tự.',
             'tags.max' => 'Danh sách tag quá dài.',
             'content.required_unless' => 'Vui lòng nhập nội dung.',
+            'content.required_if' => 'Vui lòng nhập nội dung.',
             'content_type.in' => 'Loại nội dung không hợp lệ.',
             'video_url.required_if' => 'Bài viết video cần đường dẫn video (YouTube hoặc Vimeo).',
             'video_url.max' => 'Đường dẫn video quá dài.',
+            'audio.file' => 'Tệp âm thanh phải là một tệp tin hợp lệ.',
+            'audio.mimes' => 'Tệp âm thanh phải có định dạng MP3, M4A, WAV hoặc OGG.',
+            'audio.max' => 'Kích thước tệp âm thanh tối đa là 20MB.',
+            'audio_title.max' => 'Tiêu đề âm thanh tối đa 255 ký tự.',
             'series_title.max' => 'Tên chuỗi bài viết tối đa 150 ký tự.',
             'series_id.exists' => 'Chuỗi bài viết không tồn tại.',
             'series_part.required_with' => 'Chuỗi bài viết dài kỳ cần số thứ tự của phần.',

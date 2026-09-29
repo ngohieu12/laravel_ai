@@ -1,5 +1,7 @@
 @extends('layouts.dashboard')
 
+@use('App\Models\Post')
+
 @section('title', 'Quản lý bài viết')
 
 @section('content')
@@ -7,6 +9,9 @@
     <div class="flex flex-wrap gap-2 items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-800">🛠️ Quản lý bài viết</h1>
         <div class="flex gap-2">
+            <a href="{{ route('dashboard.audio.index') }}" class="px-4 py-2 border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-50 transition text-sm font-medium">
+                🎧 Thư viện MP3
+            </a>
             <a href="{{ route('posts.index') }}" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium">
                 🌐 Xem trang công khai
             </a>
@@ -41,6 +46,15 @@
                 @endforeach
             </select>
         </div>
+        <div>
+            <label for="type" class="block text-xs font-medium text-gray-500 mb-1">Loại nội dung</label>
+            <select name="type" id="type" class="border-gray-300 rounded-lg px-3 py-2 border text-sm" onchange="this.form.submit()">
+                <option value="">Tất cả</option>
+                <option value="{{ Post::CONTENT_TYPE_TEXT }}" {{ request('type') === Post::CONTENT_TYPE_TEXT ? 'selected' : '' }}>📝 Chữ</option>
+                <option value="{{ Post::CONTENT_TYPE_VIDEO }}" {{ request('type') === Post::CONTENT_TYPE_VIDEO ? 'selected' : '' }}>🎥 Video</option>
+                <option value="{{ Post::CONTENT_TYPE_AUDIO }}" {{ request('type') === Post::CONTENT_TYPE_AUDIO ? 'selected' : '' }}>🎧 Audio</option>
+            </select>
+        </div>
         @if(request()->filled('tag'))
             <input type="hidden" name="tag" value="{{ request('tag') }}">
             <div>
@@ -52,7 +66,7 @@
             </div>
         @endif
         <button type="submit" class="px-4 py-2 bg-slate-600 text-white rounded-lg text-sm">Lọc</button>
-        @if(request()->hasAny(['search', 'status', 'category', 'tag']))
+        @if(request()->hasAny(['search', 'status', 'category', 'tag', 'type']))
             <a href="{{ route('dashboard.posts.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Xóa lọc</a>
         @endif
     </form>
@@ -69,6 +83,9 @@
                             <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">{{ ucfirst($post->category) }}</span>
                             @if($post->isVideo())
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">🎥 Video</span>
+                            @endif
+                            @if($post->isAudio())
+                                <a href="{{ route('dashboard.audio.index') }}" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 hover:bg-amber-200">🎧 Audio</a>
                             @endif
                             @if($post->isSeries())
                                 <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800" title="{{ $post->series?->title }}">📖 Phần {{ $post->series_part }}</span>

@@ -37,6 +37,7 @@
                         'favorite' => '❤️',
                         'pin' => '📌',
                         'comment_favorite' => '👍',
+                        'mention' => '📣',
                     ];
                     $icon = $kindIcons[$data['kind'] ?? ''] ?? '🔔';
                     $targetUrl = $data['url'] ?? null;
@@ -82,7 +83,7 @@
         <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
             <div class="text-5xl mb-3">🔕</div>
             <p class="text-gray-500 font-medium">Chưa có thông báo nào</p>
-            <p class="text-sm text-gray-400 mt-1">Bạn sẽ nhận thông báo khi có ai đó bình luận, trả lời, thích hoặc ghim bài viết / bình luận của bạn.</p>
+            <p class="text-sm text-gray-400 mt-1">Bạn sẽ nhận thông báo khi có ai đó bình luận, trả lời, thích, ghim hoặc @nhắc tên bạn trong bài viết / bình luận.</p>
         </div>
     @endif
 </div>
