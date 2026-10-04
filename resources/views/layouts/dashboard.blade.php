@@ -17,6 +17,15 @@
         .prose code { background: #f3f4f6; padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; }
         .prose pre { background: #1f2937; color: #e5e7eb; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
         .prose pre code { background: transparent; color: inherit; }
+        /* Trình soạn thảo rich text (Quill) — khung editor ở dashboard */
+        .editor-frame .ql-toolbar { border: 0; border-bottom: 1px solid #e5e7eb; padding: 8px; background: #f9fafb; }
+        .editor-frame .ql-container { border: 0; font-family: inherit; font-size: 0.875rem; }
+        .editor-frame .ql-editor { min-height: 22rem; padding: 16px; line-height: 1.75; }
+        .editor-frame.editor-compact .ql-editor { min-height: 6rem; }
+        .editor-frame .ql-editor.ql-blank::before { color: #9ca3af; font-style: normal; }
+        .editor-frame .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; }
+        .editor-frame .ql-editor ol li[data-list="bullet"] { list-style: disc; }
+        .editor-frame .ql-editor li[class*="ql-indent-"] { padding-left: 3em; }
         html { scroll-behavior: smooth; }
     </style>
 </head>

@@ -36,6 +36,13 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
 - **Danh mục mặc định `Video` và `MP3`**: hệ thống chỉ tạo sẵn hai danh mục này (`Category::DEFAULTS`, seed `CategorySeeder`). Bài video mặc định rơi vào danh mục `Video`, bài audio vào `MP3`; tác giả vẫn tự ghi đè được nếu muốn. Hai danh mục được tự tạo lại mỗi lần mở màn quản lý nên xoá nhầm không sao.
 - **Màn admin "Danh mục Video & MP3"** (`/admin/media-categories`): xem số bài / số bài đã xuất bản / số bài đúng loại nội dung của từng danh mục, lọc theo từng nhóm, đổi tên danh mục (cascade sang mọi bài) và nhảy tới danh sách bài tương ứng.
 
+**Trình soạn thảo rich text**
+
+- Ô nội dung ở màn thêm / sửa bài dùng Quill 2 (nạp từ CDN, cùng cách Tailwind đang được nạp): tiêu đề H1–H3, đậm / nghiêng / gạch chân / gạch ngang, trích dẫn, khối mã, danh sách có thứ tự / bullet, thụt lề, căn lề trái–giữa–phải–đều, chèn liên kết, chèn ảnh bằng URL, xoá định dạng; nút có nhãn tiếng Việt và undo/redo.
+- Gõ `@` ngay trong editor vẫn hiện gợi ý thành viên (dùng chung endpoint `/mentions` với ô bình luận).
+- HTML luôn được ghi về `<textarea name="content">` khi submit nên server vẫn validate và lưu đúng như trước. Nếu CDN bị chặn, editor không khởi động và ô nhập HTML thuần hiện lại như cũ.
+- `HtmlSanitizer` giữ lại định dạng do editor sinh ra nhưng chỉ ở mức an toàn: `class` chỉ nhận `ql-align-*` / `ql-indent-*` / `ql-size-*` / `ql-syntax`, `style` chỉ nhận `text-align`, `data-list` chỉ nhận `bullet|ordered|checked|unchecked`; mọi thứ khác vẫn bị loại bỏ.
+
 **@mention trong bình luận và bài viết**
 
 - Mỗi tài khoản có tên định danh `@username` tự sinh từ tên hiển thị (bỏ dấu, không trùng — trùng thì thêm hậu tố `-2`, `-3`…). Xem tại hồ sơ quản trị `/admin/users/{id}`.

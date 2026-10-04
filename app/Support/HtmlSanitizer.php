@@ -64,6 +64,28 @@ class HtmlSanitizer
         'summary' => [],
     ];
 
+    /**
+     * Editor-generated class names that are safe to keep.
+     *
+     * The rich text editor (Quill) marks up alignment with `ql-align-*`,
+     * indentation with `ql-indent-*`, font size with `ql-size-*` and code
+     * blocks with `ql-syntax`. Nothing else starting with `ql-` is accepted,
+     * and classes from other namespaces are always dropped.
+     */
+    private const ALLOWED_CLASS_PATTERN = '/^ql-(?:(?:align|indent|size)-[a-z0-9]+|syntax)$/i';
+
+    /**
+     * The only CSS declaration kept from the `style` attribute.
+     *
+     * Alignment is the one thing a writer genuinely needs, and a single
+     * `text-align` value carries no scripting or exfiltration risk. Every
+     * other declaration (position, background-image, behavior, …) is dropped.
+     */
+    private const ALLOWED_STYLE_DECLARATION = '/^\s*text-align\s*:\s*(left|right|center|justify)\s*$/i';
+
+    /** `data-list` values the editor may put on a list item. */
+    private const ALLOWED_DATA_LIST = ['bullet', 'ordered', 'checked', 'unchecked'];
+
     private const DISALLOWED_TAGS = [
         'script', 'style', 'iframe', 'object', 'embed', 'applet',
         'form', 'input', 'textarea', 'select', 'button', 'label',
@@ -109,12 +131,8 @@ class HtmlSanitizer
 
                 $allowedAttrs = self::ALLOWED_TAGS[$tagName];
 
-                // If no attributes allowed for this tag, strip all
-                if (empty($allowedAttrs) && $attributes !== '') {
-                    return "<{$tagName}>";
-                }
-
-                // Filter attributes
+                // Filters the attributes (including the editor formatting ones)
+                // and keeps only what is safe on this tag.
                 $cleaned = self::filterAttributes($attributes, $allowedAttrs);
 
                 return "<{$tagName}{$cleaned}>";
@@ -130,10 +148,14 @@ class HtmlSanitizer
 
     /**
      * Filter attributes, keeping only whitelisted ones.
+     *
+     * `class`, `style` and `data-list` are not taken at face value: each is
+     * re-validated on its own terms so the editor's formatting survives while
+     * arbitrary CSS or markup classes never reach the page.
      */
     private static function filterAttributes(string $attributeString, array $allowedAttrs): string
     {
-        if (preg_match_all('/(\w+)(?:\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|(\S+)))?/s', $attributeString, $matches, PREG_SET_ORDER)) {
+        if (preg_match_all('/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|(\S+)))?/s', $attributeString, $matches, PREG_SET_ORDER)) {
             $result = '';
             foreach ($matches as $match) {
                 $attrName = strtolower($match[1]);
@@ -141,6 +163,15 @@ class HtmlSanitizer
 
                 // Block event handlers
                 if (str_starts_with($attrName, self::EVENT_HANDLER_PREFIX)) {
+                    continue;
+                }
+
+                // Editor formatting attributes go through their own validators
+                if (in_array($attrName, ['class', 'style', 'data-list'], true)) {
+                    if ($safeValue = self::sanitizeFormattingAttribute($attrName, $attrValue)) {
+                        $result .= " {$attrName}=\"{$safeValue}\"";
+                    }
+
                     continue;
                 }
 
@@ -163,6 +194,75 @@ class HtmlSanitizer
         }
 
         return '';
+    }
+
+    /**
+     * Validate one of the editor formatting attributes.
+     *
+     * Returns the escaped value to keep, or null when the whole attribute has
+     * to be dropped (a single bad token invalidates the attribute).
+     */
+    private static function sanitizeFormattingAttribute(string $name, string $value): ?string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        return match ($name) {
+            'class' => self::isSafeClassList($value)
+                ? htmlspecialchars($value, ENT_QUOTES, 'UTF-8')
+                : null,
+            'style' => self::sanitizeStyle($value),
+            'data-list' => in_array(strtolower($value), self::ALLOWED_DATA_LIST, true)
+                ? strtolower($value)
+                : null,
+            default => null,
+        };
+    }
+
+    /**
+     * Keep only the `text-align` declarations of a style attribute.
+     *
+     * Editors write several declarations in one attribute; the harmless one is
+     * kept and everything else (position, background-image, …) is discarded.
+     */
+    private static function sanitizeStyle(string $value): ?string
+    {
+        $kept = [];
+
+        foreach (explode(';', $value) as $declaration) {
+            if (preg_match(self::ALLOWED_STYLE_DECLARATION, $declaration, $matches)) {
+                $kept[] = 'text-align: '.strtolower($matches[1]);
+            }
+        }
+
+        if ($kept === []) {
+            return null;
+        }
+
+        return htmlspecialchars(implode('; ', $kept), ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Every class in the list must be one the editor is allowed to emit.
+     */
+    private static function isSafeClassList(string $value): bool
+    {
+        $classes = preg_split('/\s+/', $value) ?: [];
+
+        if ($classes === []) {
+            return false;
+        }
+
+        foreach ($classes as $class) {
+            if (! preg_match(self::ALLOWED_CLASS_PATTERN, $class)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

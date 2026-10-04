@@ -99,9 +99,8 @@
                 <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
                     <span id="content-label-text">Nội dung</span> <span id="content-required-mark" class="text-red-500">*</span>
                 </label>
-                <textarea id="content" name="content" rows="15" required data-mention-input
-                    class="w-full border-gray-300 rounded-lg px-4 py-3 border focus:ring-2 focus:ring-slate-400 focus:border-slate-400 font-mono text-sm">{{ old('content', $post->content) }}</textarea>
-                <p class="text-xs text-gray-500 mt-1">Gõ <span class="font-mono">@</span> để nhắc tên một thành viên — họ sẽ nhận được thông báo.</p>
+                <x-posts.editor name="content" :value="old('content', $post->content)"
+                    placeholder="Viết nội dung bài viết của bạn ở đây... Gõ @ để nhắc tên" />
                 @error('content')
                     <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
@@ -219,7 +218,6 @@
             const radios = document.querySelectorAll('input[name="content_type"]');
             const videoWrap = document.getElementById('video-url-wrap');
             const audioWrap = document.getElementById('audio-wrap');
-            const contentInput = document.getElementById('content');
             const contentMark = document.getElementById('content-required-mark');
             const contentLabelText = document.getElementById('content-label-text');
             const labels = { video: 'Mô tả video (không bắt buộc)', audio: 'Mô tả audio (không bắt buộc)' };
@@ -231,10 +229,7 @@
 
                 if (videoWrap) videoWrap.classList.toggle('hidden', type !== 'video');
                 if (audioWrap) audioWrap.classList.toggle('hidden', type !== 'audio');
-                if (contentInput) {
-                    contentInput.required = isText;
-                    contentInput.rows = isText ? 15 : 4;
-                }
+                // Ô nội dung (bắt buộc / chiều cao) do component posts.editor tự lo.
                 if (contentMark) contentMark.classList.toggle('hidden', !isText);
                 if (contentLabelText) {
                     contentLabelText.textContent = isText ? 'Nội dung' : (labels[type] || 'Nội dung');

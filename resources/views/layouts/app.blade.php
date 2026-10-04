@@ -19,6 +19,11 @@
         .mention { color: #0369a1; background: #e0f2fe; border-radius: 4px; padding: 0 3px; font-weight: 500; }
         .prose pre { background: #1f2937; color: #e5e7eb; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
         .prose pre code { background: transparent; color: inherit; }
+        /* Danh sách do trình soạn thảo sinh: <ol><li data-list="bullet"> */
+        .prose li[data-list="bullet"] { list-style: disc; }
+        .prose li[data-list="ordered"] { list-style: decimal; }
+        .prose li[data-list="checked"], .prose li[data-list="unchecked"] { list-style: none; }
+        .prose li[class*="ql-indent-"] { padding-left: 3em; }
         .chat-bubble { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .typing-dots span { animation: blink 1.4s infinite both; }
